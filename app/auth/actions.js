@@ -93,7 +93,7 @@ export async function signUpCandidate({ email, password, fullName, contestedSeat
             };
         }
 
-        return { success: true, redirectPath: '/dashboard/candidate' };
+        return { success: true, redirectPath: '/dashboard/candidate/profile' };
     } catch (err) {
         return { success: false, message: 'An error occurred during account creation.' };
     }

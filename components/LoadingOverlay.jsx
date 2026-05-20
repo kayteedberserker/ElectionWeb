@@ -1,7 +1,7 @@
 // components/LoadingOverlay.jsx
 import React from 'react';
 
-export default function LoadingOverlay({ message = "Processing secure request..." }) {
+export default function LoadingOverlay({ message = "Processing your request..." }) {
     return (
         <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-background/80 backdrop-blur-sm animate-fade-in">
             <div className="relative flex items-center justify-center">
@@ -10,10 +10,10 @@ export default function LoadingOverlay({ message = "Processing secure request...
                 <div className="absolute h-10 w-10 animate-ping rounded-full bg-primary/10"></div>
             </div>
             <p className="mt-6 font-semibold text-textMain tracking-wide text-sm animate-pulse">
-                {message.toUpperCase()}
+                {message}
             </p>
             <p className="mt-1 text-xs text-textMuted tracking-wider font-medium">
-                SECURE ELECTORAL ENVELOPE HANDSHAKE
+                Please wait a moment
             </p>
         </div>
     );

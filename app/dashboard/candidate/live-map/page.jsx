@@ -28,7 +28,7 @@ export default function ElectoralTreePage() {
     const [lgas, setLgas] = useState([]);
     const [rootWards, setRootWards] = useState([]); // Dynamic root level for sub-LGA fallback arrays
     const [wardsData, setWardsData] = useState({}); // Keyed by lgaName
-    const [puData, setPuData] = useState({});       // Keyed by wardName
+    const [puData, setPuData] = useState({});        // Keyed by wardName
 
     // LIVE DATABASE PERSONNEL REGISTRY
     const [campaignPersonnel, setCampaignPersonnel] = useState([]);
@@ -239,7 +239,7 @@ export default function ElectoralTreePage() {
     };
 
     if (isLoading) {
-        return <LoadingOverlay message="Mapping command structure topology tree..." />;
+        return <LoadingOverlay message="Loading electoral structure..." />;
     }
 
     // Determine targeted structural context arrays based on user scope values
@@ -250,22 +250,22 @@ export default function ElectoralTreePage() {
         : lgas;
 
     return (
-        <main className="p-4 md:p-8 max-w-5xl mx-auto space-y-8">
-            {isPending && <LoadingOverlay message="Querying localized tactical unit metrics..." />}
+        <main className="p-4 md:p-8 max-w-5xl mx-auto space-y-8 text-slate-800">
+            {isPending && <LoadingOverlay message="Updating data..." />}
 
-            {/* Top Operational Breadcrumb Tracker */}
-            <div className="border-b-2 border-[#8A7968]/20 pb-4 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            {/* Top Operational Location Tracker */}
+            <div className="border-b border-slate-200 pb-6 flex flex-col md:flex-row md:items-start md:justify-between gap-4">
                 <div>
-                    <h1 className="text-2xl font-black text-[#291C14] uppercase tracking-wide">Electoral Territory Command Tree</h1>
-                    <p className="text-xs font-medium text-[#8A7968] mt-1">
-                        Read-only deployment map matrix running from top structural boundaries straight down to polling unit points.
+                    <h1 className="text-2xl font-bold tracking-tight text-slate-900">Electoral Structure Overview</h1>
+                    <p className="text-sm font-medium text-slate-500 mt-1">
+                        View the hierarchy of assigned personnel from Local Government Areas down to specific polling units.
                     </p>
                 </div>
-                <div className="bg-[#FAF6F0] border border-[#8A7968]/20 px-4 py-2 rounded-xl text-right">
-                    <span className="block text-[9px] font-black uppercase text-[#8A7968]">Campaign Scope</span>
-                    <span className="text-xs font-bold text-[#291C14] uppercase tracking-wide">
-                        {userScope.role ? userScope.role.replace(/_/g, ' ') : 'Global Admin'} ({userScope.state || 'No State Specified'})
-                        {userScope.lga && ` - ${userScope.lga} LGA`}
+                <div className="bg-white border border-slate-200 px-4 py-3 rounded-xl shadow-sm text-left md:text-right">
+                    <span className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Administrative Jurisdiction</span>
+                    <span className="text-sm font-bold text-slate-800 tracking-wide">
+                        {userScope.role ? userScope.role.replace(/_/g, ' ').toUpperCase() : 'CENTRAL HEADQUARTERS'} ({userScope.state || 'All States'})
+                        {userScope.lga && ` - ${userScope.lga} Local Government Area`}
                         {userScope.stateConstituency && ` [${userScope.stateConstituency}]`}
                         {userScope.senatorialDistrict && ` (${userScope.senatorialDistrict} District)`}
                         {userScope.federalConstituency && ` (${userScope.federalConstituency})`}
@@ -274,37 +274,46 @@ export default function ElectoralTreePage() {
             </div>
 
             {error && (
-                <div className="p-4 bg-red-50 border-2 border-red-500/20 text-red-700 text-xs font-bold uppercase tracking-wide rounded-xl">
-                    {error}
+                <div className="p-4 bg-red-50 border border-red-200 text-red-700 text-sm font-semibold rounded-xl flex items-center space-x-2">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    <span>{error}</span>
                 </div>
             )}
 
-            {/* Core Tree Hierarchy Container */}
-            <div className="bg-white border-2 border-[#8A7968]/20 rounded-xl p-6 shadow-sm">
+            {/* Core Territorial Tree Hierarchy Container */}
+            <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-6">
+                <div>
+                    <h3 className="text-lg font-bold text-slate-900">Regional Hierarchy Breakdown</h3>
+                    <p className="text-sm text-slate-500 mt-1">Track deployed field managers. Expand jurisdictions to view assigned operational workflows.</p>
+                </div>
 
                 {/* Level 0: State Anchor Node */}
-                <div className="flex items-center justify-between mb-6 bg-[#FAF6F0] p-4 rounded-xl border border-[#8A7968]/10">
-                    <div className="flex items-center space-x-3">
-                        <div className="w-3 h-3 rounded-full bg-[#9A6749] animate-pulse" />
-                        <div>
-                            <span className="block text-[9px] font-bold text-[#8A7968] uppercase tracking-widest">State Center Structure</span>
-                            <h2 className="text-sm font-black text-[#291C14] uppercase tracking-wider">{userScope.state || 'N/A'} State</h2>
+                <div className="bg-slate-50 p-5 rounded-xl border border-slate-200 space-y-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                        <div className="flex items-center space-x-3">
+                            <div className="w-3 h-3 rounded-full bg-[#9A6749] animate-pulse" />
+                            <div>
+                                <span className="block text-xs font-semibold text-slate-500 uppercase tracking-wider">State Level</span>
+                                <h2 className="text-lg font-bold text-slate-900">{userScope.state || 'N/A'} State</h2>
+                            </div>
                         </div>
-                    </div>
-                    <div className="text-right">
-                        <span className="bg-[#291C14] text-[#FAF6F0] text-[9px] font-black uppercase tracking-wider px-2 py-1 rounded-md">
-                            ROOT SYNC ACTIVE
-                        </span>
+                        <div className="text-left sm:text-right">
+                            <span className="bg-slate-900 text-white text-xs font-bold uppercase tracking-wider px-2.5 py-1 rounded-md">
+                                LIVE DATA SYNCED
+                            </span>
+                        </div>
                     </div>
                 </div>
 
-                {/* Dynamic Branch Layer: Swap between Standard LGA layout and direct Sub-LGA Ward branch arrays */}
-                <div className="space-y-4 pl-4 border-l-2 border-[#8A7968]/10">
+                {/* Dynamic Tree Branches Container */}
+                <div className="space-y-4 pl-2 md:pl-4 border-l-2 border-slate-100">
 
                     {!isSubLgaContext ? (
                         /* STANDARD LGA TREE RENDER BLOCK */
                         targetedLgas.length === 0 ? (
-                            <p className="text-xs italic text-[#8A7968] font-medium">No Local Government Areas mapped under this configuration filter scope.</p>
+                            <p className="text-sm text-slate-500 font-medium pl-2">No Local Government Areas found for this view.</p>
                         ) : (
                             targetedLgas.map(lga => {
                                 const isLgaOpen = !!expandedLgas[lga.name];
@@ -312,34 +321,33 @@ export default function ElectoralTreePage() {
                                 const lgaSupervisor = lga.supervisorName || lga.supervisor_name || lga.supervisor || getLgaSupervisor(lga.name);
 
                                 return (
-                                    <div key={lga.name} className="space-y-2">
+                                    <div key={lga.name} className="border border-slate-200 rounded-xl overflow-hidden bg-white">
                                         {lga.name && (
                                             <div
                                                 onClick={() => toggleLga(lga.name)}
-                                                className="flex items-center justify-between p-3 bg-white hover:bg-[#FAF6F0]/50 border-2 border-[#8A7968]/10 rounded-xl cursor-pointer transition-all select-none"
+                                                className="flex flex-col sm:flex-row sm:items-center justify-between p-4 hover:bg-slate-50 cursor-pointer transition-all select-none gap-4"
                                             >
                                                 <div className="flex items-center space-x-3">
-                                                    <span className="text-xs text-[#8A7968] font-bold">
-                                                        {isLgaOpen ? '▼' : '▶'}
-                                                    </span>
+                                                    <div className={`p-1.5 rounded-md ${isLgaOpen ? 'bg-slate-200 text-slate-700' : 'bg-slate-100 text-slate-500'}`}>
+                                                        <svg className={`w-4 h-4 transition-transform ${isLgaOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                                                        </svg>
+                                                    </div>
                                                     <div>
-                                                        <div className="flex items-center space-x-2">
-                                                            <h4 className="text-xs font-black text-[#291C14] uppercase tracking-wide">{lga.name} LGA</h4>
-                                                            <span className={`w-1.5 h-1.5 rounded-full ${lgaSupervisor ? 'bg-green-500 animate-pulse' : 'bg-amber-400'}`} />
-                                                        </div>
-                                                        <span className="text-[10px] text-[#8A7968] font-semibold uppercase">
-                                                            {lga.wardCount || lga.ward_count || 0} Electoral Wards Mapped
+                                                        <h4 className="text-base font-bold text-slate-800">{lga.name} Local Government Area</h4>
+                                                        <span className="text-xs text-slate-500 font-medium mt-0.5 block">
+                                                            {lga.wardCount || lga.ward_count || 0} Wards Mapped
                                                         </span>
                                                     </div>
                                                 </div>
 
-                                                <div className="flex items-center space-x-2 text-right">
+                                                <div className="flex items-center space-x-2 sm:text-right">
                                                     {lgaSupervisor ? (
-                                                        <span className="bg-green-50 border border-green-500/20 text-green-700 text-[9px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-md shadow-xs">
-                                                            LGA Chief: {lgaSupervisor.toUpperCase()}
+                                                        <span className="bg-green-50 border border-green-500/20 text-green-700 text-xs font-semibold uppercase tracking-wider px-2.5 py-1 rounded-md shadow-xs">
+                                                            LGA Supervisor: {lgaSupervisor.toUpperCase()}
                                                         </span>
                                                     ) : (
-                                                        <span className="bg-amber-50 border border-amber-500/20 text-amber-600 text-[9px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-md">
+                                                        <span className="bg-amber-50 border border-amber-500/20 text-amber-600 text-xs font-semibold uppercase tracking-wider px-2.5 py-1 rounded-md">
                                                             LGA Supervisor Vacant
                                                         </span>
                                                     )}
@@ -348,11 +356,11 @@ export default function ElectoralTreePage() {
                                         )}
 
                                         {isLgaOpen && (
-                                            <div className="pl-6 space-y-3 border-l-2 border-[#9A6749]/20 pt-1 pb-2">
+                                            <div className="p-4 bg-slate-50 space-y-3 border-t border-slate-200">
                                                 {structuralWards.length === 0 ? (
-                                                    <div className="flex items-center space-x-2 text-[10px] font-bold uppercase tracking-wider text-[#8A7968]/60 py-2 pl-2 italic">
-                                                        <div className="w-2 h-2 rounded-full border border-t-transparent border-[#8A7968] animate-spin" />
-                                                        <span>Querying regional branch points...</span>
+                                                    <div className="flex items-center space-x-2 text-sm text-slate-500 py-2 pl-2">
+                                                        <div className="w-4 h-4 border-2 border-slate-300 border-t-slate-600 rounded-full animate-spin" />
+                                                        <span>Loading wards...</span>
                                                     </div>
                                                 ) : (
                                                     structuralWards.map(ward => {
@@ -361,44 +369,43 @@ export default function ElectoralTreePage() {
                                                         const wardSupervisor = ward.supervisorName || ward.supervisor_name || ward.supervisor || getWardSupervisor(ward.name);
 
                                                         return (
-                                                            <div key={ward.name} className="space-y-2">
+                                                            <div key={ward.name} className="border border-slate-200 rounded-lg bg-white overflow-hidden shadow-sm">
                                                                 <div
                                                                     onClick={() => toggleWard(lga.name, ward.name)}
-                                                                    className="flex items-center justify-between p-2.5 bg-[#FAF6F0]/30 hover:bg-[#FAF6F0] border border-[#8A7968]/20 rounded-lg cursor-pointer transition-all select-none"
+                                                                    className="flex flex-col sm:flex-row sm:items-center justify-between p-3 hover:bg-slate-50 cursor-pointer transition-all select-none gap-3"
                                                                 >
-                                                                    <div className="flex items-center space-x-2">
-                                                                        <span className="text--------- text-[#9A6749] font-bold">
-                                                                            {isWardOpen ? '▼' : '▶'}
-                                                                        </span>
+                                                                    <div className="flex items-center space-x-3">
+                                                                        <div className={`p-1 rounded text-slate-400 ${isWardOpen ? 'bg-slate-100' : ''}`}>
+                                                                            <svg className={`w-3.5 h-3.5 transition-transform ${isWardOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                                                                            </svg>
+                                                                        </div>
                                                                         <div>
-                                                                            <div className="flex items-center space-x-1.5">
-                                                                                <h5 className="text-[11px] font-bold text-[#291C14] uppercase tracking-wide">{ward.name} Ward</h5>
-                                                                                <span className={`w-1 h-1 rounded-full ${wardSupervisor ? 'bg-blue-500' : 'bg-red-400'}`} />
-                                                                            </div>
-                                                                            <span className="text-[9px] text-[#8A7968] font-bold uppercase block">
-                                                                                {ward.puCount || ward.pu_count || 0} Units Mapped
+                                                                            <h5 className="text-sm font-bold text-slate-800">{ward.name} Ward</h5>
+                                                                            <span className="text-xs text-slate-500 font-medium block">
+                                                                                {ward.puCount || ward.pu_count || 0} Polling Units Mapped
                                                                             </span>
                                                                         </div>
                                                                     </div>
                                                                     <div>
                                                                         {wardSupervisor ? (
-                                                                            <span className="bg-blue-50 border border-blue-500/10 text-blue-700 text-[8px] font-black uppercase tracking-wider px-2 py-0.5 rounded shadow-xs">
-                                                                                Ward Lead: {wardSupervisor.toUpperCase()}
+                                                                            <span className="bg-blue-50 border border-blue-500/10 text-blue-700 text-xs font-semibold uppercase tracking-wider px-2 py-1 rounded shadow-xs">
+                                                                                Ward Supervisor: {wardSupervisor.toUpperCase()}
                                                                             </span>
                                                                         ) : (
-                                                                            <span className="bg-red-50 border border-red-500/10 text-red-500 text-[8px] font-black uppercase tracking-wider px-2 py-0.5 rounded">
-                                                                                Ward Lead Vacant
+                                                                            <span className="bg-red-50 border border-red-500/10 text-red-500 text-xs font-semibold uppercase tracking-wider px-2 py-1 rounded">
+                                                                                Ward Supervisor Vacant
                                                                             </span>
                                                                         )}
                                                                     </div>
                                                                 </div>
 
                                                                 {isWardOpen && (
-                                                                    <div className="pl-6 grid grid-cols-1 md:grid-cols-2 gap-3 border-l border-dashed border-[#8A7968]/30 py-1">
+                                                                    <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-4 bg-slate-50 border-t border-slate-200">
                                                                         {localizedPus.length === 0 ? (
-                                                                            <div className="flex items-center space-x-2 text-[9px] font-bold uppercase tracking-wider text-[#8A7968]/60 col-span-2 py-2 italic">
-                                                                                <div className="w-2 h-2 rounded-full border border-t-transparent border-[#8A7968] animate-spin" />
-                                                                                <span>Mapping unit nodes into registry matrix...</span>
+                                                                            <div className="flex items-center space-x-2 text-sm text-slate-500 col-span-2 py-2">
+                                                                                <div className="w-4 h-4 border-2 border-slate-300 border-t-slate-600 rounded-full animate-spin" />
+                                                                                <span>Loading polling units...</span>
                                                                             </div>
                                                                         ) : (
                                                                             localizedPus.map(pu => {
@@ -406,17 +413,34 @@ export default function ElectoralTreePage() {
                                                                                 const puAgent = pu.agentName || pu.agent_name || pu.assigned_agent || pu.agent || getPuAgent(puCode, pu.name);
 
                                                                                 return (
-                                                                                    <div key={pu.id || puCode || pu.name} className="p-3 bg-white border border-[#8A7968]/15 rounded-xl shadow-xs flex flex-col justify-between space-y-2 hover:border-[#9A6749]/30 transition-all">
-                                                                                        <div>
-                                                                                            <span className="block text-[8px] font-black tracking-widest text-[#8A7968] uppercase">CODE: {puCode || 'N/A'}</span>
-                                                                                            <h6 className="text-[10px] font-black text-[#291C14] uppercase tracking-tight leading-tight mt-0.5">{pu.name}</h6>
+                                                                                    <div key={pu.id || puCode || pu.name} className="p-4 border rounded-xl flex flex-col justify-between space-y-4 transition-all bg-white border-slate-200 shadow-sm">
+                                                                                        <div className="flex justify-between items-start gap-3">
+                                                                                            <div>
+                                                                                                <span className="block text-xs font-bold text-slate-400 mb-1">
+                                                                                                    Code: {puCode || 'N/A'}
+                                                                                                </span>
+                                                                                                <h6 className="text-sm font-semibold text-slate-800 leading-snug">
+                                                                                                    {pu.name}
+                                                                                                </h6>
+                                                                                            </div>
+                                                                                            <span className={`text-xs font-semibold px-2.5 py-1 rounded-md whitespace-nowrap ${puAgent ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-500'}`}>
+                                                                                                {puAgent ? 'Agent Verified' : 'Awaiting Field Assignment'}
+                                                                                            </span>
                                                                                         </div>
-                                                                                        <div className="pt-2 border-t border-[#FAF6F0] flex items-center justify-between">
-                                                                                            <span className="text-[8px] font-bold text-[#8A7968] uppercase">Registered Official:</span>
+
+                                                                                        <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
+                                                                                            <span className="text-xs font-semibold text-slate-500 uppercase">Assigned Official:</span>
                                                                                             {puAgent ? (
-                                                                                                <span className="text-[9px] font-black text-green-700 bg-green-50/60 px-1.5 py-0.5 rounded border border-green-500/10 uppercase tracking-tight shadow-2xs">✓ {puAgent.toUpperCase()}</span>
+                                                                                                <span className="text-xs font-bold text-green-700 bg-green-50/60 px-2 py-1 rounded border border-green-500/10 uppercase tracking-tight flex items-center">
+                                                                                                    <svg className="w-3.5 h-3.5 text-green-600 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" />
+                                                                                                    </svg>
+                                                                                                    {puAgent.toUpperCase()}
+                                                                                                </span>
                                                                                             ) : (
-                                                                                                <span className="text-[8px] font-bold text-red-500 bg-red-50/60 px-1.5 py-0.5 rounded border border-red-500/10 uppercase tracking-tight">⚠️ UNASSIGNED</span>
+                                                                                                <span className="text-xs font-bold text-red-500 bg-red-50/60 px-2 py-1 rounded border border-red-500/10 uppercase tracking-tight">
+                                                                                                    ⚠️ UNASSIGNED
+                                                                                                </span>
                                                                                             )}
                                                                                         </div>
                                                                                     </div>
@@ -438,53 +462,53 @@ export default function ElectoralTreePage() {
                     ) : (
                         /* SUB-LGA DIRECT WARD ROOT TREE BLOCK */
                         rootWards.length === 0 ? (
-                            <p className="text-xs italic text-[#8A7968] font-medium">No Electoral Wards mapped under this localized configuration scope footprint.</p>
+                            <p className="text-sm text-slate-500 font-medium pl-2">No Electoral Wards found for this view.</p>
                         ) : (
                             rootWards.map(ward => {
                                 const isWardOpen = !!expandedWards[ward.name];
                                 const localizedPus = puData[ward.name] || [];
+                                const totalWardExpectedPus = ward.puCount || ward.pu_count || 0;
                                 const wardSupervisor = ward.supervisorName || ward.supervisor_name || ward.supervisor || getWardSupervisor(ward.name);
 
                                 return (
-                                    <div key={ward.name} className="space-y-2">
+                                    <div key={ward.name} className="border border-slate-200 rounded-xl overflow-hidden bg-white">
                                         <div
                                             onClick={() => toggleWard(userScope.lga, ward.name)}
-                                            className="flex items-center justify-between p-3 bg-white hover:bg-[#FAF6F0]/50 border-2 border-[#8A7968]/15 rounded-xl cursor-pointer transition-all select-none"
+                                            className="flex flex-col sm:flex-row sm:items-center justify-between p-4 hover:bg-slate-50 cursor-pointer transition-all select-none gap-4"
                                         >
                                             <div className="flex items-center space-x-3">
-                                                <span className="text-xs text-[#9A6749] font-bold">
-                                                    {isWardOpen ? '▼' : '▶'}
-                                                </span>
+                                                <div className={`p-1.5 rounded-md ${isWardOpen ? 'bg-slate-200 text-slate-700' : 'bg-slate-100 text-slate-500'}`}>
+                                                    <svg className={`w-4 h-4 transition-transform ${isWardOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                                                    </svg>
+                                                </div>
                                                 <div>
-                                                    <div className="flex items-center space-x-2">
-                                                        <h5 className="text-xs font-black text-[#291C14] uppercase tracking-wide">{ward.name} Ward</h5>
-                                                        <span className={`w-1.5 h-1.5 rounded-full ${wardSupervisor ? 'bg-blue-500 animate-pulse' : 'bg-red-400'}`} />
-                                                    </div>
-                                                    <span className="text-[10px] text-[#8A7968] font-bold uppercase block">
-                                                        {ward.puCount || ward.pu_count || 0} Units Mapped Inside Active Scope
+                                                    <h5 className="text-base font-bold text-slate-800">{ward.name} Ward</h5>
+                                                    <span className="text-xs text-slate-500 font-medium mt-0.5 block">
+                                                        {totalWardExpectedPus} Polling Units Mapped
                                                     </span>
                                                 </div>
                                             </div>
 
                                             <div>
                                                 {wardSupervisor ? (
-                                                    <span className="bg-blue-50 border border-blue-500/20 text-blue-700 text-[9px] font-black uppercase tracking-wider px-2.5 py-1 rounded-md shadow-xs">
-                                                        Ward Lead: {wardSupervisor.toUpperCase()}
+                                                    <span className="bg-blue-50 border border-blue-500/20 text-blue-700 text-xs font-semibold uppercase tracking-wider px-2.5 py-1 rounded-md shadow-xs">
+                                                        Ward Supervisor: {wardSupervisor.toUpperCase()}
                                                     </span>
                                                 ) : (
-                                                    <span className="bg-red-50 border border-red-500/20 text-red-500 text-[9px] font-black uppercase tracking-wider px-2.5 py-1 rounded-md">
-                                                        Ward Lead Vacant
+                                                    <span className="bg-red-50 border border-red-500/20 text-red-500 text-xs font-semibold uppercase tracking-wider px-2.5 py-1 rounded-md">
+                                                        Ward Supervisor Vacant
                                                     </span>
                                                 )}
                                             </div>
                                         </div>
 
                                         {isWardOpen && (
-                                            <div className="pl-6 grid grid-cols-1 md:grid-cols-2 gap-3 border-l border-dashed border-[#8A7968]/30 py-1">
+                                            <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-4 bg-slate-50 border-t border-slate-200">
                                                 {localizedPus.length === 0 ? (
-                                                    <div className="flex items-center space-x-2 text-[9px] font-bold uppercase tracking-wider text-[#8A7968]/60 col-span-2 py-2 italic">
-                                                        <div className="w-2 h-2 rounded-full border border-t-transparent border-[#8A7968] animate-spin" />
-                                                        <span>Mapping unit nodes into registry matrix...</span>
+                                                    <div className="flex items-center space-x-2 text-sm text-slate-500 col-span-2 py-2">
+                                                        <div className="w-4 h-4 border-2 border-slate-300 border-t-slate-600 rounded-full animate-spin" />
+                                                        <span>Loading polling units...</span>
                                                     </div>
                                                 ) : (
                                                     localizedPus.map(pu => {
@@ -492,17 +516,34 @@ export default function ElectoralTreePage() {
                                                         const puAgent = pu.agentName || pu.agent_name || pu.assigned_agent || pu.agent || getPuAgent(puCode, pu.name);
 
                                                         return (
-                                                            <div key={pu.id || puCode || pu.name} className="p-3 bg-white border border-[#8A7968]/15 rounded-xl shadow-xs flex flex-col justify-between space-y-2 hover:border-[#9A6749]/30 transition-all">
-                                                                <div>
-                                                                    <span className="block text-[8px] font-black tracking-widest text-[#8A7968] uppercase">CODE: {puCode || 'N/A'}</span>
-                                                                    <h6 className="text-[10px] font-black text-[#291C14] uppercase tracking-tight leading-tight mt-0.5">{pu.name}</h6>
+                                                            <div key={pu.id || puCode || pu.name} className="p-4 border rounded-xl flex flex-col justify-between space-y-4 transition-all bg-white border-slate-200 shadow-sm">
+                                                                <div className="flex justify-between items-start gap-3">
+                                                                    <div>
+                                                                        <span className="block text-xs font-bold text-slate-400 mb-1">
+                                                                            Code: {puCode || 'N/A'}
+                                                                        </span>
+                                                                        <h6 className="text-sm font-semibold text-slate-800 leading-snug">
+                                                                            {pu.name}
+                                                                        </h6>
+                                                                    </div>
+                                                                    <span className={`text-xs font-semibold px-2.5 py-1 rounded-md whitespace-nowrap ${puAgent ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-500'}`}>
+                                                                        {puAgent ? 'Agent Verified' : 'Awaiting Field Assignment'}
+                                                                    </span>
                                                                 </div>
-                                                                <div className="pt-2 border-t border-[#FAF6F0] flex items-center justify-between">
-                                                                    <span className="text-[8px] font-bold text-[#8A7968] uppercase">Registered Official:</span>
+
+                                                                <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
+                                                                    <span className="text-xs font-semibold text-slate-500 uppercase">Assigned Official:</span>
                                                                     {puAgent ? (
-                                                                        <span className="text-[9px] font-black text-green-700 bg-green-50/60 px-1.5 py-0.5 rounded border border-green-500/10 uppercase tracking-tight shadow-2xs">✓ {puAgent.toUpperCase()}</span>
+                                                                        <span className="text-xs font-bold text-green-700 bg-green-50/60 px-2 py-1 rounded border border-green-500/10 uppercase tracking-tight flex items-center">
+                                                                            <svg className="w-3.5 h-3.5 text-green-600 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" />
+                                                                            </svg>
+                                                                            {puAgent.toUpperCase()}
+                                                                        </span>
                                                                     ) : (
-                                                                        <span className="text-[8px] font-bold text-red-500 bg-red-50/60 px-1.5 py-0.5 rounded border border-red-500/10 uppercase tracking-tight">⚠️ UNASSIGNED</span>
+                                                                        <span className="text-xs font-bold text-red-500 bg-red-50/60 px-2 py-1 rounded border border-red-500/10 uppercase tracking-tight">
+                                                                            ⚠️ UNASSIGNED
+                                                                        </span>
                                                                     )}
                                                                 </div>
                                                             </div>

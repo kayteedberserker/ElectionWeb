@@ -1,4 +1,3 @@
-// components/DashboardSidebar.jsx
 'use client';
 
 import React, { useState, useTransition } from 'react';
@@ -17,13 +16,13 @@ export default function DashboardSidebar({ userMetadata, onLogout }) {
         candidate: [
             { label: 'CAMPAIGN OVERVIEW', path: '/dashboard/candidate' },
             { label: 'RESULT COLLATION', path: '/dashboard/candidate/results' },
-            { label: 'SUPERVISOR MANAGEMENT', path: '/dashboard/candidate/supervisors' },
+            { label: 'LGA SUPERVISORS', path: '/dashboard/candidate/supervisors' },
             { label: 'LIVE OBSERVATION', path: '/dashboard/candidate/live-map' },
             { label: 'EDIT PROFILE', path: '/dashboard/candidate/profile' },
         ],
         lga_supervisor: [
             { label: 'LGA OVERVIEW', path: '/dashboard/lga' },
-            { label: 'WARD COORDINATORS', path: '/dashboard/lga/coordinators' },
+            { label: 'WARD SUPERVISORS', path: '/dashboard/lga/coordinators' },
             { label: 'LIVE OBSERVATION', path: '/dashboard/lga/live-map' },
             { label: 'EDIT PROFILE', path: '/dashboard/lga/profile' },
         ],
@@ -35,7 +34,9 @@ export default function DashboardSidebar({ userMetadata, onLogout }) {
         ]
     };
 
-    const activeLinks = navigationLinks[userRole] || [];
+    // Normalize lookup to safely handle both lowercase and uppercase role mutations from DB
+    const normalizedRole = userRole?.toLowerCase();
+    const activeLinks = navigationLinks[normalizedRole] || navigationLinks[userRole] || [];
 
     const toggleSidebar = () => setIsOpen(!isOpen);
 
@@ -56,13 +57,13 @@ export default function DashboardSidebar({ userMetadata, onLogout }) {
                     <span className="text-xs font-black tracking-tight text-[#291C14]">INEC PORTAL</span>
                     {userRole && (
                         <span className="text-[9px] font-bold text-[#9A6749] tracking-wider uppercase">
-                            {userRole.replace('_', ' ')} PANEL
+                            {userRole.replace(/_/g, ' ')} PANEL
                         </span>
                     )}
                 </div>
                 <button
                     onClick={toggleSidebar}
-                    className="p-2 border-2 border-[#8A7968]/30 rounded-xl bg-[#FAF6F0] text-[#291C14] font-bold text-xs uppercase tracking-wide"
+                    className="p-2 border-2 border-[#8A7968]/30 rounded-xl bg-[#FAF6F0] text-[#291C14] font-bold text-xs uppercase tracking-wide transition-all active:scale-95"
                 >
                     {isOpen ? 'Close Menu' : 'Open Menu'}
                 </button>
@@ -71,7 +72,7 @@ export default function DashboardSidebar({ userMetadata, onLogout }) {
             {/* Backdrop Overlay for mobile slide-in tracking */}
             {isOpen && (
                 <div
-                    className="lg:hidden fixed inset-0 bg-[#291C14]/40 backdrop-blur-sm z-40 transition-opacity"
+                    className="lg:hidden fixed inset-0 bg-[#291C14]/40 backdrop-blur-sm z-40 transition-opacity duration-300"
                     onClick={toggleSidebar}
                 />
             )}
@@ -85,12 +86,21 @@ export default function DashboardSidebar({ userMetadata, onLogout }) {
             `}>
                 <div>
                     {/* User Identity Section */}
-                    <div className="mb-8 p-4 rounded-xl bg-[#FAF6F0] border-2 border-[#8A7968]/20">
-                        <span className="text-[9px] font-mono font-bold tracking-widest text-[#8A7968] block uppercase">Active User</span>
-                        <h4 className="text-sm font-black text-[#291C14] truncate uppercase">{userName || 'LOADING PROFILE...'}</h4>
+                    <div className="mb-8 p-4 rounded-xl bg-[#FAF6F0] border-2 border-[#8A7968]/20 shadow-xs">
+                        <span className="text-[9px] font-mono font-bold tracking-widest text-[#8A7968] block uppercase mb-0.5">Active User</span>
+
+                        {userName ? (
+                            <h4 className="text-sm font-black text-[#291C14] truncate uppercase">{userName}</h4>
+                        ) : (
+                            <div className="flex items-center space-x-2 py-1">
+                                <div className="w-2 h-2 bg-[#9A6749] rounded-full animate-pulse" />
+                                <span className="text-xs font-bold text-[#8A7968] tracking-wide animate-pulse">LOADING PROFILE...</span>
+                            </div>
+                        )}
+
                         {userRole && (
-                            <span className="inline-block text-[10px] font-mono font-bold mt-1 text-[#9A6749] bg-[#9A6749]/10 px-2 py-0.5 rounded border border-[#9A6749]/20 uppercase">
-                                {userRole.replace('_', ' ')}
+                            <span className="inline-block text-[10px] font-mono font-bold mt-2 text-[#9A6749] bg-[#9A6749]/10 px-2 py-0.5 rounded border border-[#9A6749]/20 uppercase tracking-wide">
+                                {userRole.replace(/_/g, ' ')}
                             </span>
                         )}
                     </div>
@@ -98,6 +108,11 @@ export default function DashboardSidebar({ userMetadata, onLogout }) {
                     {/* Navigation Items Link List */}
                     <nav className="space-y-2">
                         <span className="text-[10px] font-bold tracking-widest text-[#8A7968] block mb-3 uppercase">Menu Options</span>
+                        {activeLinks.length === 0 && userRole && (
+                            <p className="text-xs font-medium text-amber-600 bg-amber-50 border border-amber-200 rounded-lg p-2.5">
+                                No routes registered for this account tier.
+                            </p>
+                        )}
                         {activeLinks.map((node, index) => {
                             const isCurrentPath = pathname === node.path;
                             return (
@@ -105,9 +120,9 @@ export default function DashboardSidebar({ userMetadata, onLogout }) {
                                     key={index}
                                     href={node.path}
                                     onClick={() => setIsOpen(false)}
-                                    className={`block w-full text-left px-4 py-3 rounded-xl text-xs font-bold uppercase tracking-wider border-2 transition-all ${isCurrentPath
-                                        ? 'bg-[#9A6749] text-white border-[#9A6749] shadow-sm'
-                                        : 'bg-white text-[#291C14] border-[#8A7968]/10 hover:border-[#8A7968]/40 hover:bg-[#FAF6F0]'
+                                    className={`block w-full text-left px-4 py-3 rounded-xl text-xs font-bold uppercase tracking-wider border-2 transition-all duration-200 ${isCurrentPath
+                                        ? 'bg-[#9A6749] text-white border-[#9A6749] shadow-md translate-x-1'
+                                        : 'bg-white text-[#291C14] border-[#8A7968]/10 hover:border-[#8A7968]/40 hover:bg-[#FAF6F0] hover:translate-x-0.5'
                                         }`}
                                 >
                                     {node.label}
@@ -122,9 +137,16 @@ export default function DashboardSidebar({ userMetadata, onLogout }) {
                     <button
                         onClick={handleDisconnect}
                         disabled={isPending}
-                        className="w-full bg-[#dc2626]/5 border-2 border-[#dc2626]/20 hover:border-[#dc2626]/50 text-[#dc2626] text-xs font-bold uppercase tracking-wider py-3 rounded-xl transition-all text-center disabled:opacity-50"
+                        className="w-full bg-[#dc2626]/5 border-2 border-[#dc2626]/20 hover:border-[#dc2626]/50 hover:bg-[#dc2626]/10 text-[#dc2626] text-xs font-bold uppercase tracking-wider py-3 rounded-xl transition-all text-center disabled:opacity-50 flex items-center justify-center space-x-2"
                     >
-                        {isPending ? 'Logging out...' : 'Log Out Account'}
+                        {isPending ? (
+                            <>
+                                <div className="w-3.5 h-3.5 border-2 border-[#dc2626] border-t-transparent rounded-full animate-spin" />
+                                <span>Logging out...</span>
+                            </>
+                        ) : (
+                            <span>Log Out Account</span>
+                        )}
                     </button>
                 </div>
             </aside>
