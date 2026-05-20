@@ -1,0 +1,311 @@
+{
+  "metadata": {
+    "scrapedAt": "2025-09-27T11:56:13.593Z",
+    "totalStates": 37,
+    "totalLGAs": 774,
+    "totalWards": 8809,
+    "totalPollingUnits": 185432,
+    "failures": {
+      "totalFailures": 0,
+      "failures": []
+    }
+  },
+  "states": [
+    {
+      "code": "1",
+      "name": "ABIA",
+      "fileName": "abia.json",
+      "lgas": 17,
+      "wards": 184,
+      "pollingUnits": 4210
+    },
+    {
+      "code": "2",
+      "name": "ADAMAWA",
+      "fileName": "adamawa.json",
+      "lgas": 21,
+      "wards": 226,
+      "pollingUnits": 4327
+    },
+    {
+      "code": "3",
+      "name": "AKWA IBOM",
+      "fileName": "akwa-ibom.json",
+      "lgas": 31,
+      "wards": 329,
+      "pollingUnits": 4681
+    },
+    {
+      "code": "4",
+      "name": "ANAMBRA",
+      "fileName": "anambra.json",
+      "lgas": 21,
+      "wards": 326,
+      "pollingUnits": 6045
+    },
+    {
+      "code": "5",
+      "name": "BAUCHI",
+      "fileName": "bauchi.json",
+      "lgas": 20,
+      "wards": 212,
+      "pollingUnits": 5624
+    },
+    {
+      "code": "6",
+      "name": "BAYELSA",
+      "fileName": "bayelsa.json",
+      "lgas": 8,
+      "wards": 105,
+      "pollingUnits": 2349
+    },
+    {
+      "code": "7",
+      "name": "BENUE",
+      "fileName": "benue.json",
+      "lgas": 23,
+      "wards": 276,
+      "pollingUnits": 5345
+    },
+    {
+      "code": "8",
+      "name": "BORNO",
+      "fileName": "borno.json",
+      "lgas": 27,
+      "wards": 312,
+      "pollingUnits": 5383
+    },
+    {
+      "code": "9",
+      "name": "CROSS RIVER",
+      "fileName": "cross-river.json",
+      "lgas": 18,
+      "wards": 193,
+      "pollingUnits": 3461
+    },
+    {
+      "code": "10",
+      "name": "DELTA",
+      "fileName": "delta.json",
+      "lgas": 25,
+      "wards": 270,
+      "pollingUnits": 6132
+    },
+    {
+      "code": "11",
+      "name": "EBONYI",
+      "fileName": "ebonyi.json",
+      "lgas": 13,
+      "wards": 171,
+      "pollingUnits": 3111
+    },
+    {
+      "code": "12",
+      "name": "EDO",
+      "fileName": "edo.json",
+      "lgas": 18,
+      "wards": 192,
+      "pollingUnits": 4711
+    },
+    {
+      "code": "13",
+      "name": "EKITI",
+      "fileName": "ekiti.json",
+      "lgas": 16,
+      "wards": 177,
+      "pollingUnits": 2621
+    },
+    {
+      "code": "14",
+      "name": "ENUGU",
+      "fileName": "enugu.json",
+      "lgas": 17,
+      "wards": 260,
+      "pollingUnits": 4396
+    },
+    {
+      "code": "37",
+      "name": "FEDERAL CAPITAL TERRITORY",
+      "fileName": "federal-capital-territory.json",
+      "lgas": 6,
+      "wards": 62,
+      "pollingUnits": 2879
+    },
+    {
+      "code": "15",
+      "name": "GOMBE",
+      "fileName": "gombe.json",
+      "lgas": 11,
+      "wards": 114,
+      "pollingUnits": 3098
+    },
+    {
+      "code": "16",
+      "name": "IMO",
+      "fileName": "imo.json",
+      "lgas": 27,
+      "wards": 305,
+      "pollingUnits": 5062
+    },
+    {
+      "code": "17",
+      "name": "JIGAWA",
+      "fileName": "jigawa.json",
+      "lgas": 27,
+      "wards": 287,
+      "pollingUnits": 4796
+    },
+    {
+      "code": "18",
+      "name": "KADUNA",
+      "fileName": "kaduna.json",
+      "lgas": 23,
+      "wards": 255,
+      "pollingUnits": 8239
+    },
+    {
+      "code": "19",
+      "name": "KANO",
+      "fileName": "kano.json",
+      "lgas": 44,
+      "wards": 484,
+      "pollingUnits": 11696
+    },
+    {
+      "code": "20",
+      "name": "KATSINA",
+      "fileName": "katsina.json",
+      "lgas": 34,
+      "wards": 361,
+      "pollingUnits": 7011
+    },
+    {
+      "code": "21",
+      "name": "KEBBI",
+      "fileName": "kebbi.json",
+      "lgas": 21,
+      "wards": 225,
+      "pollingUnits": 3966
+    },
+    {
+      "code": "22",
+      "name": "KOGI",
+      "fileName": "kogi.json",
+      "lgas": 21,
+      "wards": 239,
+      "pollingUnits": 3746
+    },
+    {
+      "code": "23",
+      "name": "KWARA",
+      "fileName": "kwara.json",
+      "lgas": 16,
+      "wards": 193,
+      "pollingUnits": 3079
+    },
+    {
+      "code": "24",
+      "name": "LAGOS",
+      "fileName": "lagos.json",
+      "lgas": 20,
+      "wards": 245,
+      "pollingUnits": 13567
+    },
+    {
+      "code": "25",
+      "name": "NASARAWA",
+      "fileName": "nasarawa.json",
+      "lgas": 13,
+      "wards": 147,
+      "pollingUnits": 3399
+    },
+    {
+      "code": "26",
+      "name": "NIGER",
+      "fileName": "niger.json",
+      "lgas": 25,
+      "wards": 274,
+      "pollingUnits": 5220
+    },
+    {
+      "code": "27",
+      "name": "OGUN",
+      "fileName": "ogun.json",
+      "lgas": 20,
+      "wards": 236,
+      "pollingUnits": 5276
+    },
+    {
+      "code": "28",
+      "name": "ONDO",
+      "fileName": "ondo.json",
+      "lgas": 18,
+      "wards": 203,
+      "pollingUnits": 4133
+    },
+    {
+      "code": "29",
+      "name": "OSUN",
+      "fileName": "osun.json",
+      "lgas": 30,
+      "wards": 332,
+      "pollingUnits": 4095
+    },
+    {
+      "code": "30",
+      "name": "OYO",
+      "fileName": "oyo.json",
+      "lgas": 33,
+      "wards": 351,
+      "pollingUnits": 6740
+    },
+    {
+      "code": "31",
+      "name": "PLATEAU",
+      "fileName": "plateau.json",
+      "lgas": 17,
+      "wards": 207,
+      "pollingUnits": 5194
+    },
+    {
+      "code": "32",
+      "name": "RIVERS",
+      "fileName": "rivers.json",
+      "lgas": 23,
+      "wards": 319,
+      "pollingUnits": 7183
+    },
+    {
+      "code": "33",
+      "name": "SOKOTO",
+      "fileName": "sokoto.json",
+      "lgas": 23,
+      "wards": 244,
+      "pollingUnits": 4229
+    },
+    {
+      "code": "34",
+      "name": "TARABA",
+      "fileName": "taraba.json",
+      "lgas": 16,
+      "wards": 168,
+      "pollingUnits": 3765
+    },
+    {
+      "code": "35",
+      "name": "YOBE",
+      "fileName": "yobe.json",
+      "lgas": 17,
+      "wards": 178,
+      "pollingUnits": 2987
+    },
+    {
+      "code": "36",
+      "name": "ZAMFARA",
+      "fileName": "zamfara.json",
+      "lgas": 14,
+      "wards": 147,
+      "pollingUnits": 3676
+    }
+  ]
+}
