@@ -4,6 +4,8 @@ import { redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
 import { createClient } from '../../utils/supabase/server'; // Update this path to match your structure
 import DashboardSidebar from '../../components/DashboardSidebar';
+export const dynamic = 'force-dynamic';
+
 
 export default async function DashboardRootLayout({ children }) {
     const supabase = await createClient();
