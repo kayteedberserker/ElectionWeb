@@ -353,7 +353,7 @@ hover:[&::-webkit-scrollbar-thumb]:bg-[#1E3A8A]/40
                         </div>
 
                         {/* Micro-cards showcasing raw staff counts directly */}
-                        <div className="space-y-4 overflow-y-auto flex-grow pr-1.5 custom-scroll">
+                        <div className="space-y-4 overflow-y-auto flex-grow pr-1.5 custom-scrollbar">
 
                             <div className="p-4 bg-[#F9FAFB] rounded-lg border border-[#6B7280]/15">
                                 <div className="flex justify-between items-center mb-1">
