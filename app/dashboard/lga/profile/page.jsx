@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useTransition } from 'react';
 import { createBrowserClient } from '@supabase/ssr';
+import { User, Mail, Phone, Shield, MapPin, Lock, CheckCircle2, AlertTriangle } from 'lucide-react';
 import LoadingOverlay from '../../../../components/LoadingOverlay';
 
 export default function LgasSupervisorProfilePage() {
@@ -51,7 +52,7 @@ export default function LgasSupervisorProfilePage() {
                 const { data: { user }, error: userError } = await supabase.auth.getUser();
 
                 if (userError || !user) {
-                    setMessage({ type: 'error', text: 'Failed to synchronize authenticated user session.' });
+                    setMessage({ type: 'error', text: 'Failed to load authenticated user session.' });
                     return;
                 }
 
@@ -228,53 +229,58 @@ export default function LgasSupervisorProfilePage() {
     }
 
     return (
-        <main className="p-4 md:p-8 max-w-4xl mx-auto space-y-12">
-            {isPending && <LoadingOverlay message="Saving updates..." />}
+        <main className="p-4 px-0 max-w-4xl mx-auto space-y-12 bg-background text-textMain">
+            {isPending && <LoadingOverlay message="Saving profile modifications..." />}
 
             {/* Profile Identity Header */}
-            <div className="border-b-2 border-[#8A7968]/20 pb-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                <div>
-                    <h1 className="text-2xl font-black text-[#291C14] uppercase tracking-wide">Supervisor Profile Settings</h1>
-                    <p className="text-xs font-medium text-[#8A7968] mt-1">
-                        Manage your contact information, update security settings, and review your assigned geographic jurisdictions.
+            <div className="border-b border-textMuted/20 pb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+                <div className="space-y-1">
+                    <span className="text-[10px] font-black uppercase tracking-widest text-textMuted bg-card px-2.5 py-1 rounded-md border border-textMuted/10">
+                        Account Preferences
+                    </span>
+                    <h1 className="text-2xl font-black text-textMain uppercase tracking-tight pt-1">Supervisor Profile Settings</h1>
+                    <p className="text-xs font-medium text-textMuted">
+                        Manage your personal contact details, adjust security credentials, and review assigned operations.
                     </p>
                 </div>
 
-                {/* Supervisor Jurisdiction Tracker Display Element */}
+                {/* Assigned Jurisdictions Summary */}
                 {formData.assignedLgas.length > 0 && (
-                    <div className="bg-[#FAF6F0] border border-[#8A7968]/20 rounded-xl px-4 py-3 flex flex-col items-end text-right max-w-md">
-                        <div className="text-[10px] font-black text-[#9A6749] uppercase tracking-wider">
-                            Assigned Jurisdiction: <span className="text-[#291C14] font-mono font-black">{formData.assignedLgas.join(', ').toUpperCase()}, {formData.assignedState?.toUpperCase()} STATE</span>
+                    <div className="bg-card border border-textMuted/20 rounded-xl px-4 py-3 flex flex-col items-start md:items-end text-left md:text-right max-w-md w-full md:w-auto shadow-xs">
+                        <div className="text-[10px] font-black text-primary uppercase tracking-wider flex items-center gap-1.5">
+                            <MapPin className="w-3.5 h-3.5 text-primary" />
+                            <span>Jurisdiction: <span className="text-textMain font-mono font-black">{formData.assignedLgas.join(', ').toUpperCase()}, {formData.assignedState?.toUpperCase()} STATE</span></span>
                         </div>
-                        <div className="flex gap-x-4 text-[9px] font-bold uppercase text-[#8A7968] mt-1">
-                            <div>Total Wards: <span className="text-[#291C14] font-mono">{metricCounts.totalWards}</span></div>
-                            {metricCounts.totalPollingUnits > 0 && <div>Total Polling Units: <span className="text-[#291C14] font-mono">{metricCounts.totalPollingUnits}</span></div>}
+                        <div className="flex gap-x-4 text-[10px] font-bold uppercase text-textMuted mt-1.5 border-t border-textMuted/10 pt-1 w-full justify-start md:justify-end">
+                            <div>Wards: <span className="text-textMain font-mono font-black">{metricCounts.totalWards}</span></div>
+                            {metricCounts.totalPollingUnits > 0 && <div>Polling Units: <span className="text-textMain font-mono font-black">{metricCounts.totalPollingUnits}</span></div>}
                         </div>
                     </div>
                 )}
             </div>
 
-            {/* Form Workspace Grid */}
+            {/* Form Workspace Area */}
             <div className="space-y-8">
                 {message.text && (
-                    <div className={`p-4 rounded-xl border-2 text-xs font-bold uppercase tracking-wider transition-all ${message.type === 'success'
-                        ? 'bg-green-50 border-green-500/30 text-green-700'
-                        : 'bg-red-50 border-red-500/30 text-red-700'
+                    <div className={`p-4 rounded-xl border text-xs font-bold uppercase tracking-wide flex items-center gap-2 ${message.type === 'success'
+                        ? 'bg-accent/10 border-accent/30 text-accent'
+                        : 'bg-gold/10 border-gold/30 text-gold'
                         }`}>
-                        {message.text}
+                        {message.type === 'success' ? <CheckCircle2 className="w-4 h-4" /> : <AlertTriangle className="w-4 h-4" />}
+                        <span>{message.text}</span>
                     </div>
                 )}
 
-                <form onSubmit={handleProfileUpdate} className="bg-white border-2 border-[#8A7968]/20 rounded-xl p-6 shadow-sm space-y-8">
+                <form onSubmit={handleProfileUpdate} className="bg-card border border-textMuted/20 rounded-2xl p-6 shadow-sm space-y-8">
 
-                    {/* Identity Data Group */}
+                    {/* Contact Details Group */}
                     <div>
-                        <h3 className="text-xs font-bold tracking-widest text-[#8A7968] uppercase mb-4 border-b border-[#8A7968]/10 pb-1">
-                            Supervisor Information
+                        <h3 className="text-[10px] font-black tracking-widest text-textMuted uppercase mb-6 border-b border-textMuted/10 pb-2 flex items-center gap-2">
+                            <User className="w-4 h-4 text-textMuted" /> Supervisor Information
                         </h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div className="flex flex-col space-y-2">
-                                <label className="text-[10px] font-bold text-[#291C14] tracking-wider uppercase">Full Name</label>
+                            <div className="flex flex-col space-y-1.5">
+                                <label className="text-[10px] font-black text-textMain tracking-wider uppercase">Full Name</label>
                                 <input
                                     type="text"
                                     name="fullName"
@@ -282,105 +288,112 @@ export default function LgasSupervisorProfilePage() {
                                     onChange={handleInputChange}
                                     placeholder="Enter full name"
                                     required
-                                    className="w-full px-4 py-3 bg-[#FAF6F0] border-2 border-[#8A7968]/10 rounded-xl text-xs font-bold text-[#291C14] uppercase tracking-wide focus:border-[#9A6749] focus:outline-none transition-all"
+                                    className="w-full px-4 py-3 bg-background border border-textMuted/20 rounded-xl text-xs font-bold text-textMain uppercase tracking-wide focus:border-primary focus:outline-none transition-colors"
                                 />
                             </div>
-                            <div className="flex flex-col space-y-2">
-                                <label className="text-[10px] font-bold text-[#8A7968] tracking-wider uppercase">Email Address (Locked)</label>
+                            <div className="flex flex-col space-y-1.5">
+                                <label className="text-[10px] font-black text-textMuted tracking-wider uppercase flex items-center gap-1">
+                                    <Mail className="w-3 h-3" /> Email Address (Read-Only)
+                                </label>
                                 <input
                                     type="email"
                                     value={formData.email}
                                     disabled
-                                    className="w-full px-4 py-3 bg-[#FAF6F0]/50 border-2 border-[#8A7968]/5 rounded-xl text-xs font-bold text-[#8A7968] tracking-wide cursor-not-allowed opacity-70"
+                                    className="w-full px-4 py-3 bg-background/50 border border-textMuted/10 rounded-xl text-xs font-bold text-textMuted tracking-wide cursor-not-allowed opacity-60"
                                 />
                             </div>
-                            <div className="flex flex-col space-y-2">
-                                <label className="text-[10px] font-bold text-[#291C14] tracking-wider uppercase">Phone Number</label>
+                            <div className="flex flex-col space-y-1.5">
+                                <label className="text-[10px] font-black text-textMain tracking-wider uppercase flex items-center gap-1">
+                                    <Phone className="w-3 h-3" /> Phone Number
+                                </label>
                                 <input
                                     type="tel"
                                     name="phone"
                                     value={formData.phone}
                                     onChange={handleInputChange}
                                     placeholder="Enter phone number"
-                                    className="w-full px-4 py-3 bg-[#FAF6F0] border-2 border-[#8A7968]/10 rounded-xl text-xs font-bold text-[#291C14] tracking-wide focus:border-[#9A6749] focus:outline-none transition-all"
+                                    className="w-full px-4 py-3 bg-background border border-textMuted/20 rounded-xl text-xs font-bold text-textMain tracking-wide focus:border-primary focus:outline-none transition-colors"
                                 />
                             </div>
-                            <div className="flex flex-col space-y-2">
-                                <label className="text-[10px] font-bold text-[#8A7968] tracking-wider uppercase">Account Role Type</label>
-                                <div className="w-full px-4 py-3 bg-[#FAF6F0]/70 border-2 border-[#8A7968]/5 rounded-xl text-xs font-black text-[#9A6749] uppercase tracking-wider">
+                            <div className="flex flex-col space-y-1.5">
+                                <label className="text-[10px] font-black text-textMuted tracking-wider uppercase flex items-center gap-1">
+                                    <Shield className="w-3 h-3" /> Account Role Type
+                                </label>
+                                <div className="w-full px-4 py-3 bg-background/60 border border-textMuted/10 rounded-xl text-xs font-black text-primary uppercase tracking-wider">
                                     LGA Supervisor
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    {/* Immutable Assignment Parameters Block */}
+                    {/* Static Boundaries Parameter Block */}
                     <div>
-                        <h3 className="text-xs font-bold tracking-widest text-[#8A7968] uppercase mb-2 border-b border-[#8A7968]/10 pb-1">
-                            Assigned Locations
+                        <h3 className="text-[10px] font-black tracking-widest text-textMuted uppercase mb-2 border-b border-textMuted/10 pb-2 flex items-center gap-2">
+                            <MapPin className="w-4 h-4 text-textMuted" /> Assigned Territories
                         </h3>
-                        <p className="text-[10px] text-[#8A7968] font-medium mb-4 italic">
-                            Your geographic location assignment is managed by your administrator and cannot be modified from this profile page.
+                        <p className="text-[10px] text-textMuted font-bold uppercase mb-6 tracking-wide italic">
+                            Your structural workspace boundary parameters are managed strictly by system administrators.
                         </p>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div className="flex flex-col space-y-2">
-                                <label className="text-[10px] font-bold text-[#8A7968] tracking-wider uppercase">Assigned State</label>
+                            <div className="flex flex-col space-y-1.5">
+                                <label className="text-[10px] font-black text-textMuted tracking-wider uppercase">Assigned State</label>
                                 <input
                                     type="text"
                                     value={formData.assignedState || 'UNASSIGNED'}
                                     disabled
-                                    className="w-full px-4 py-3 bg-[#FAF6F0]/50 border-2 border-[#8A7968]/5 rounded-xl text-xs font-bold text-[#8A7968] uppercase tracking-wide cursor-not-allowed opacity-70"
+                                    className="w-full px-4 py-3 bg-background/50 border border-textMuted/10 rounded-xl text-xs font-bold text-textMuted uppercase tracking-wide cursor-not-allowed opacity-60"
                                 />
                             </div>
-                            <div className="flex flex-col space-y-2">
-                                <label className="text-[10px] font-bold text-[#8A7968] tracking-wider uppercase">Assigned LGAs</label>
+                            <div className="flex flex-col space-y-1.5">
+                                <label className="text-[10px] font-black text-textMuted tracking-wider uppercase">Assigned LGAs</label>
                                 <input
                                     type="text"
                                     value={formData.assignedLgas.length > 0 ? formData.assignedLgas.join(', ').toUpperCase() : 'UNASSIGNED'}
                                     disabled
-                                    className="w-full px-4 py-3 bg-[#FAF6F0]/50 border-2 border-[#8A7968]/5 rounded-xl text-xs font-bold text-[#8A7968] uppercase tracking-wide cursor-not-allowed opacity-70"
+                                    className="w-full px-4 py-3 bg-background/50 border border-textMuted/10 rounded-xl text-xs font-bold text-textMuted uppercase tracking-wide cursor-not-allowed opacity-60"
                                 />
                             </div>
                         </div>
                     </div>
 
-                    {/* Submission Node Controls */}
-                    <div className="border-t-2 border-[#FAF6F0] pt-4 flex justify-end">
+                    {/* Actions Panel */}
+                    <div className="border-t border-textMuted/10 pt-4 flex justify-end">
                         <button
                             type="submit"
                             disabled={isPending}
-                            className="bg-[#9A6749] text-white border-2 border-[#9A6749] hover:bg-white hover:text-[#9A6749] text-xs font-bold uppercase tracking-wider px-6 py-3 rounded-xl transition-all disabled:opacity-50 min-w-[180px] text-center shadow-sm"
+                            className="bg-primary hover:bg-primary-dark text-white text-xs font-black uppercase tracking-widest px-6 py-3.5 rounded-xl transition-all disabled:opacity-50 min-w-[200px] text-center shadow-md border border-transparent hover:scale-[1.01] active:scale-[0.99]"
                         >
                             {isPending ? 'Saving changes...' : 'Save Profile Changes'}
                         </button>
                     </div>
                 </form>
 
-                {/* Password Configuration Section */}
-                <div className="pt-4 border-t border-[#8A7968]/10">
+                {/* Security Access Settings */}
+                <div className="pt-4 border-t border-textMuted/10">
                     {passwordMessage.text && (
-                        <div className={`mb-6 p-4 rounded-xl border-2 text-xs font-bold uppercase tracking-wider transition-all ${passwordMessage.type === 'success'
-                            ? 'bg-green-50 border-green-500/30 text-green-700'
-                            : 'bg-red-50 border-red-500/30 text-red-700'
+                        <div className={`mb-6 p-4 rounded-xl border text-xs font-bold uppercase tracking-wide flex items-center gap-2 ${passwordMessage.type === 'success'
+                            ? 'bg-accent/10 border-accent/30 text-accent'
+                            : 'bg-gold/10 border-gold/30 text-gold'
                             }`}>
-                            {passwordMessage.text}
+                            {passwordMessage.type === 'success' ? <CheckCircle2 className="w-4 h-4" /> : <AlertTriangle className="w-4 h-4" />}
+                            <span>{passwordMessage.text}</span>
                         </div>
                     )}
 
-                    <form onSubmit={handlePasswordUpdate} className="bg-white border-2 border-[#8A7968]/20 rounded-xl p-6 shadow-sm space-y-6">
+                    <form onSubmit={handlePasswordUpdate} className="bg-card border border-textMuted/20 rounded-2xl p-6 shadow-sm space-y-6">
                         <div>
-                            <h3 className="text-xs font-bold tracking-widest text-[#8A7968] uppercase mb-1 border-b border-[#8A7968]/10 pb-1">
-                                Change Account Password
+                            <h3 className="text-[10px] font-black tracking-widest text-textMuted uppercase mb-1 border-b border-textMuted/10 pb-2 flex items-center gap-2">
+                                <Lock className="w-4 h-4 text-textMuted" /> Change Account Password
                             </h3>
-                            <p className="text-[10px] text-[#8A7968] font-medium mb-4 italic">
-                                Update your password below to maintain secure access to your account.
+                            <p className="text-[10px] text-textMuted font-bold uppercase mb-4 tracking-wide italic">
+                                Update credentials periodically to ensure internal security frameworks remain compliant.
                             </p>
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div className="flex flex-col space-y-2">
-                                <label className="text-[10px] font-bold text-[#291C14] tracking-wider uppercase">New Password</label>
+                            <div className="flex flex-col space-y-1.5">
+                                <label className="text-[10px] font-black text-textMain tracking-wider uppercase">New Password</label>
                                 <input
                                     type="password"
                                     name="newPassword"
@@ -388,12 +401,12 @@ export default function LgasSupervisorProfilePage() {
                                     onChange={handlePasswordInputChange}
                                     placeholder="••••••••"
                                     required
-                                    className="w-full px-4 py-3 bg-[#FAF6F0] border-2 border-[#8A7968]/10 rounded-xl text-xs font-bold text-[#291C14] focus:border-[#9A6749] focus:outline-none transition-all"
+                                    className="w-full px-4 py-3 bg-background border border-textMuted/20 rounded-xl text-xs font-bold text-textMain focus:border-primary focus:outline-none transition-colors"
                                 />
                             </div>
 
-                            <div className="flex flex-col space-y-2">
-                                <label className="text-[10px] font-bold text-[#291C14] tracking-wider uppercase">Confirm New Password</label>
+                            <div className="flex flex-col space-y-1.5">
+                                <label className="text-[10px] font-black text-textMain tracking-wider uppercase">Confirm New Password</label>
                                 <input
                                     type="password"
                                     name="confirmPassword"
@@ -401,7 +414,7 @@ export default function LgasSupervisorProfilePage() {
                                     onChange={handlePasswordInputChange}
                                     placeholder="••••••••"
                                     required
-                                    className="w-full px-4 py-3 bg-[#FAF6F0] border-2 border-[#8A7968]/10 rounded-xl text-xs font-bold text-[#291C14] focus:border-[#9A6749] focus:outline-none transition-all"
+                                    className="w-full px-4 py-3 bg-background border border-textMuted/20 rounded-xl text-xs font-bold text-textMain focus:border-primary focus:outline-none transition-colors"
                                 />
                             </div>
                         </div>
@@ -410,7 +423,7 @@ export default function LgasSupervisorProfilePage() {
                             <button
                                 type="submit"
                                 disabled={isPending}
-                                className="bg-[#291C14] text-white border-2 border-[#291C14] hover:bg-white hover:text-[#291C14] text-xs font-bold uppercase tracking-wider px-6 py-3 rounded-xl transition-all disabled:opacity-50 min-w-[180px] text-center shadow-sm"
+                                className="bg-textMain hover:bg-textMain/90 text-background text-xs font-black uppercase tracking-widest px-6 py-3.5 rounded-xl transition-all disabled:opacity-50 min-w-[200px] text-center shadow-md border border-transparent hover:scale-[1.01] active:scale-[0.99]"
                             >
                                 {isPending ? 'Updating password...' : 'Update Password'}
                             </button>

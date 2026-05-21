@@ -3,6 +3,17 @@ import { cookies } from 'next/headers';
 import { createServerClient } from '@supabase/ssr';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
+import {
+    Briefcase,
+    MapPin,
+    Activity,
+    Plus,
+    ShieldCheck,
+    User,
+    Users,
+    FileText,
+    CheckCircle2
+} from 'lucide-react';
 
 // Server-side validation and role protection
 async function getAuthenticatedSupervisor() {
@@ -47,12 +58,12 @@ export default async function LgaSupervisorDashboardPage({ searchParams }) {
     const { data: supervisorProfile, error: profileError } = await supabase
         .from('profiles')
         .select(`
-id,
-full_name,
-assigned_lgas,
-assigned_state,
-candidate_id
-`)
+      id,
+      full_name,
+      assigned_lgas,
+      assigned_state,
+      candidate_id
+    `)
         .eq('id', user.id)
         .maybeSingle();
 
@@ -83,73 +94,46 @@ candidate_id
         }
     }
 
-    // 3. Dynamic targeted structural filtering query building
+    // 3. Query profiles table to get managed Ward Supervisors and Polling Agents
     let wardCoordinatorsQuery = supabase
         .from('profiles')
         .select('id, full_name, assigned_wards, assigned_lgas, phone, created_at')
-        .in('role', ['WARD_SUPERVISOR', 'ward_supervisor', 'ward_supervisor'])
+        .in('role', ['WARD_SUPERVISOR', 'ward_supervisor'])
         .eq('lga_supervisor_id', user.id)
         .eq('candidate_id', candidateId);
 
     let pollingAgentsQuery = supabase
         .from('profiles')
-        .select('id, assigned_pus, assigned_lgas, lga_supervisor_id')
-        .in('role', ['polling_agent', 'POLLING_UNIT_AGENT'])
+        .select('id, full_name, assigned_pus, assigned_lgas, lga_supervisor_id, created_at')
+        .in('role', ['polling_agent', 'POLLING_UNIT_AGENT', 'POLLING_UNIT_AGENT'])
         .eq('lga_supervisor_id', user.id)
         .eq('candidate_id', candidateId);
 
-    let metricsQuery = supabase
-        .from('lga_performance_metrics')
-        .select('lga_name, supervisor_status, total_wards, assigned_wards, total_pus, assigned_pus')
-        .eq('state_name', safeState);
-
-    let logsQuery = supabase
-        .from('deployment_activity_logs')
-        .select('id, event_type, description, lga_name, created_at')
-        .eq('state_name', safeState)
-        .order('created_at', { ascending: false });
-
-    // Enforce arrays or structural criteria to cover all assigned jurisdictions
-    if (assignedLgasArray.length > 0) {
-        metricsQuery = metricsQuery.in('lga_name', assignedLgasArray);
-        logsQuery = logsQuery.in('lga_name', assignedLgasArray);
-    }
-
     // Execute database operations concurrently
-    const [
-        resCoordinators,
-        resAgents,
-        resMetrics,
-        resLogs
-    ] = await Promise.all([
+    const [resCoordinators, resAgents] = await Promise.all([
         wardCoordinatorsQuery,
-        pollingAgentsQuery,
-        metricsQuery,
-        logsQuery
+        pollingAgentsQuery
     ]);
 
-    // Baseline arrays directly extracted from performance-tuned database queries
     const allCoordinatorsList = resCoordinators.data || [];
     const allAgentsList = resAgents.data || [];
-    const allDbMetrics = resMetrics.data || [];
-    const allActivityLogs = resLogs.data || [];
 
-    // Secondary data pipeline layer targeting unique audit collection sheets 
+    // Secondary data pipeline layer targeting unique document audit collection sheets 
     let activeAuditsList = [];
     if (allAgentsList.length > 0) {
         const activeAgentIds = allAgentsList.map(agent => agent.id).filter(Boolean);
         if (activeAgentIds.length > 0) {
-            const { data, error } = await supabase
+            const { data } = await supabase
                 .from('document_audits')
                 .select('pu_id, pu_code, agent_id')
-                .filter('agent_id', 'in', `(${activeAgentIds.map(id => `"${id}"`).join(',')})`);
+                .in('agent_id', activeAgentIds);
             activeAuditsList = data || [];
         }
     }
 
     // 4. Fetch baseline structural targets and build an explicit ward-to-lga map dictionary
     let structuralTargetsMap = {};
-    let wardToLgaLookup = {}; // Format: { "ward_name_lowercase": "lga_name_lowercase" }
+    let wardToLgaLookup = {};
 
     await Promise.all(assignedLgasArray.map(async (lgaName) => {
         let targets = { totalWards: 0, totalPus: 0 };
@@ -172,7 +156,6 @@ candidate_id
                         totalPus: calculatedPuTotal || 0
                     };
 
-                    // Populate lookup system with ward associations found from API response
                     matrixData.wards.forEach(w => {
                         const wardName = (w.name || w.ward_name || '').toString().trim().toLowerCase();
                         if (wardName) {
@@ -185,10 +168,8 @@ candidate_id
             console.error(`Failed to query baseline metrics for ${lgaName}:`, apiError);
         }
 
-        // Apply fallback targets to db metrics safely per individual LGA
-        const specificDbMetric = allDbMetrics.find(m => m.lga_name?.toLowerCase() === lgaName.toLowerCase());
-        if (targets.totalWards === 0) targets.totalWards = specificDbMetric?.total_wards || 1;
-        if (targets.totalPus === 0) targets.totalPus = specificDbMetric?.total_pus || 1;
+        if (targets.totalWards === 0) targets.totalWards = 1;
+        if (targets.totalPus === 0) targets.totalPus = 1;
 
         structuralTargetsMap[lgaName.toLowerCase()] = targets;
     }));
@@ -196,7 +177,6 @@ candidate_id
     // 5. Dynamic Tab View Interpolation and Data Splitting logic
     const isFiltered = activeLgaTab !== 'all';
 
-    // Filter profiles AND dynamically strip out unrelated cross-boundary wards
     const coordinatorsList = isFiltered
         ? allCoordinatorsList
             .map(p => {
@@ -204,11 +184,9 @@ candidate_id
                     const normalizedWard = ward.toString().trim().toLowerCase();
                     return wardToLgaLookup[normalizedWard] === activeLgaTab.toLowerCase();
                 });
-
                 return { ...p, assigned_wards: localizedWards };
             })
             .filter(p => {
-                // Keep profile if it maps explicitly via assigned_lgas or has matching filtered wards
                 if (p.assigned_lgas && p.assigned_lgas.length > 0) {
                     return p.assigned_lgas.map(l => l.toString().toLowerCase()).includes(activeLgaTab.toLowerCase());
                 }
@@ -216,23 +194,15 @@ candidate_id
             })
         : allCoordinatorsList;
 
-    console.log(coordinatorsList, " Are all coordinators");
-
     const agentsList = isFiltered
         ? allAgentsList.filter(p => p.assigned_lgas?.map(l => l.toString().toLowerCase()).includes(activeLgaTab.toLowerCase()))
         : allAgentsList;
 
-    const activityLogs = isFiltered
-        ? allActivityLogs.filter(l => l.lga_name?.toString().toLowerCase() === activeLgaTab.toLowerCase())
-        : allActivityLogs;
-
-    // Filter out localized tracking audits belonging exclusively to the filtered agents list layout viewport
     const filteredAgentIds = new Set(agentsList.map(a => a.id));
     const targetedAudits = isFiltered
         ? activeAuditsList.filter(audit => filteredAgentIds.has(audit.agent_id))
         : activeAuditsList;
 
-    // Calculate Global or Tab Isolated Coverage Data Metrics
     let calculatedTotalWards = 0;
     let calculatedTotalPus = 0;
 
@@ -249,7 +219,6 @@ candidate_id
     if (calculatedTotalWards === 0) calculatedTotalWards = 1;
     if (calculatedTotalPus === 0) calculatedTotalPus = 1;
 
-    // Evaluate live active sets matching active tab viewport configuration
     const activeWardsSet = new Set(
         coordinatorsList
             .flatMap(p => p.assigned_wards || [])
@@ -264,7 +233,6 @@ candidate_id
             .filter(Boolean)
     );
 
-    // Extract unique scanned polling unit records securely matching current scope references
     const scannedPusSet = new Set();
     targetedAudits.forEach(audit => {
         if (audit.pu_id) scannedPusSet.add(audit.pu_id.trim().toLowerCase());
@@ -274,7 +242,6 @@ candidate_id
     const totalCoordinatorsFound = activeWardsSet.size;
     const totalAgentsFound = activePusSet.size;
 
-    // Intersect tracking records to match only targets inside assigned deployment structure bounds
     const uniqueScannedJurisdictionCount = Array.from(scannedPusSet).filter(code => activePusSet.has(code)).length;
     const verifiedScannedCount = uniqueScannedJurisdictionCount > 0 ? uniqueScannedJurisdictionCount : Math.min(scannedPusSet.size, calculatedTotalPus);
 
@@ -282,226 +249,282 @@ candidate_id
     const agentSaturation = Math.min(Math.round((totalAgentsFound / calculatedTotalPus) * 100), 100) || 0;
     const scanSaturation = Math.min(Math.round((verifiedScannedCount / calculatedTotalPus) * 100), 100) || 0;
 
-    return (
-        <div className="min-h-screen bg-[#FAF6F0] selection:bg-[#9A6749]/20 p-4 sm:p-6 lg:p-8 text-[#291C14]">
+    // 6. Generate Profile-Derived Real-time Activity Timeline Logs
+    const activityLogs = [
+        ...coordinatorsList.map(p => ({
+            id: `coord-${p.id}`,
+            event_type: 'COORDINATOR_ONBOARDED',
+            lga_name: p.assigned_lgas?.[0] || assignedLgasArray[0] || 'Unknown LGA',
+            description: `Ward Coordinator "${p.full_name || 'Staff'}" deployed to assigned sectors: ${p.assigned_wards?.join(', ') || 'None Assigned'}.`,
+            created_at: p.created_at
+        })),
+        ...agentsList.map(p => ({
+            id: `agent-${p.id}`,
+            event_type: 'AGENT_DEPLOYED',
+            lga_name: p.assigned_lgas?.[0] || assignedLgasArray[0] || 'Unknown LGA',
+            description: `Polling Agent "${p.full_name || 'Staff'}" assigned to direct field units: ${p.assigned_pus?.join(', ') || 'None Assigned'}.`,
+            created_at: p.created_at
+        }))
+    ]
+        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+        .slice(0, 15);
 
-            {/* Institutional Information Header */}
-            <header className="max-w-7xl mx-auto mb-6 bg-white p-6 rounded-2xl shadow-sm border border-[#8A7968]/20 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 transition-all duration-200 hover:border-[#8A7968]/40">
-                <div>
-                    <div className="flex items-center gap-2">
-                        <span className="h-2 w-2 rounded-full bg-[#9A6749] animate-pulse" />
-                        <span className="text-xs font-bold uppercase tracking-widest text-[#8A7968]">LGA Operational Command</span>
+    const customScrollbarClasses = `
+    [&::-webkit-scrollbar]:w-1.5 
+    [&::-webkit-scrollbar]:h-1.5 
+    [&::-webkit-scrollbar-track]:bg-[#F3F4F6] 
+    [&::-webkit-scrollbar-track]:rounded-md 
+    [&::-webkit-scrollbar-thumb]:bg-[#6B7280]/30 
+    [&::-webkit-scrollbar-thumb]:rounded-md 
+    hover:[&::-webkit-scrollbar-thumb]:bg-[#1E3A8A]/40
+  `;
+
+    return (
+        <div className="min-h-screen bg-background selection:bg-primary/20 p-4 sm:p-6 lg:p-8 text-[#111827] font-sans antialiased">
+
+            {/* Overview Information Header */}
+            <header className="max-w-7xl mx-auto mb-6 bg-[#ffffff] p-6 rounded-xl border border-[#6B7280]/20 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 shadow-sm">
+                <div className="flex items-start gap-4">
+                    <div className="p-3 bg-[#F9FAFB] border border-[#6B7280]/20 rounded-lg text-[#1E3A8A]">
+                        <User className="h-6 w-6" />
                     </div>
-                    <h1 className="text-xl font-black tracking-tight mt-1 text-[#291C14]">
-                        {supervisorName.toUpperCase()}
-                    </h1>
-                    <p className="text-xs font-bold text-[#9A6749] uppercase tracking-wider mt-0.5">
-                        Assigned Jurisdictions: <span className="text-[#291C14] underline decoration-[#9A6749] decoration-2 font-black">{assignedLgasArray.join(', ').toUpperCase()}</span> {safeState && `(${safeState} State)`}
-                    </p>
+                    <div>
+                        <div className="flex items-center gap-2">
+                            <span className="h-1.5 w-1.5 rounded-full bg-[#16A34A] animate-pulse" />
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-[#6B7280]">LGA Field Management Terminal</span>
+                        </div>
+                        <h1 className="text-xl font-bold tracking-tight mt-0.5 text-[#111827]">
+                            {supervisorName.toUpperCase()}
+                        </h1>
+                        <p className="text-xs font-semibold text-[#1E3A8A] mt-1">
+                            Assigned Focus Areas: <span className="text-[#111827] font-bold underline decoration-[#1E3A8A] decoration-2 uppercase">{assignedLgasArray.join(', ')}</span> {safeState && `(${safeState} State)`}
+                        </p>
+                    </div>
                 </div>
 
-                {/* Campaign Scope Context Details */}
-                <div className="bg-[#FAF6F0] border border-[#8A7968]/20 px-4 py-2.5 rounded-xl text-left sm:text-right min-w-[220px] shadow-inner">
-                    <span className="block text-[9px] font-bold uppercase text-[#8A7968] tracking-widest">Assigned Campaign Scope</span>
-                    <span className="text-xs font-bold text-[#291C14] uppercase tracking-wide block mt-0.5 leading-relaxed">
-                        Candidate: <span className="font-black text-[#9A6749]">{candidateName}</span>
-                        {candidateSeat && ` — ${candidateSeat.replace(/_/g, ' ')}`}
-                    </span>
+                {/* Campaign Details */}
+                <div className="bg-[#F9FAFB] border border-[#6B7280]/20 px-4 py-3 rounded-lg text-left md:text-right min-w-[240px] flex items-start md:items-center gap-3 md:justify-end">
+                    <Briefcase className="h-4 w-4 text-[#1E3A8A] mt-0.5 md:mt-0 flex-shrink-0" />
+                    <div>
+                        <span className="block text-[9px] font-bold uppercase text-[#6B7280] tracking-wider">Campaign Assignment Alignment</span>
+                        <span className="text-xs font-semibold text-[#111827] block mt-0.5 leading-normal uppercase">
+                            Candidate: <span className="text-[#1E3A8A] font-bold">{candidateName}</span>
+                            {candidateSeat && ` • ${candidateSeat.replace(/_/g, ' ')}`}
+                        </span>
+                    </div>
                 </div>
             </header>
 
-            {/* Interactive LGA Navigation Filter Tabs */}
-            <nav className="max-w-7xl mx-auto mb-8 flex flex-wrap gap-2 border-b border-[#8A7968]/20 pb-3">
+            {/* Interactive LGA Filter Tabs */}
+            <nav className="max-w-7xl mx-auto mb-8 flex flex-wrap gap-2 border-b border-[#6B7280]/20 pb-3">
                 <a
                     href="?"
-                    className={`px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all duration-150 ${activeLgaTab === 'all'
-                        ? 'bg-[#291C14] text-white shadow-sm'
-                        : 'bg-white text-[#8A7968] hover:text-[#291C14] border border-[#8A7968]/15'
+                    className={`inline-flex items-center px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all duration-150 ${activeLgaTab === 'all'
+                        ? 'bg-[#1E3A8A] text-white shadow-sm'
+                        : 'bg-[#ffffff] text-[#6B7280] hover:text-[#111827] border border-[#6B7280]/15'
                         }`}
                 >
-                    💼 All Assigned Areas ({assignedLgasArray.length})
+                    <Briefcase className="w-3.5 h-3.5 mr-1.5" /> All Areas ({assignedLgasArray.length})
                 </a>
                 {assignedLgasArray.map((lga) => (
                     <a
                         key={lga}
                         href={`?lga=${encodeURIComponent(lga.toLowerCase())}`}
-                        className={`px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all duration-150 ${activeLgaTab === lga.toLowerCase()
-                            ? 'bg-[#9A6749] text-white shadow-sm'
-                            : 'bg-white text-[#8A7968] hover:text-[#291C14] border border-[#8A7968]/15'
+                        className={`inline-flex items-center px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all duration-150 ${activeLgaTab === lga.toLowerCase()
+                            ? 'bg-[#1E3A8A] text-white shadow-sm'
+                            : 'bg-[#ffffff] text-[#6B7280] hover:text-[#111827] border border-[#6B7280]/15'
                             }`}
                     >
-                        📍 {lga.toUpperCase()}
+                        <MapPin className="w-3.5 h-3.5 mr-1.5" /> {lga.toUpperCase()}
                     </a>
                 ))}
             </nav>
 
             <main className="max-w-7xl mx-auto space-y-8">
 
-                {/* Staffing Deployment Coverage Metrics */}
+                {/* Deployment Metrics */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
 
-                    {/* Card 1: Managed Boundaries Info */}
-                    <div className="bg-white p-5 rounded-2xl border border-[#8A7968]/20 relative overflow-hidden shadow-sm transition-all duration-300 hover:shadow-md hover:-translate-y-0.5 group">
-                        <div className="absolute top-0 left-0 w-1.5 h-full bg-[#291C14] transition-all group-hover:w-2" />
-                        <p className="text-xs font-bold uppercase tracking-wider text-[#8A7968]">Current Boundary Scope</p>
-                        <p className="text-2xl font-black tracking-tight text-[#291C14] mt-2 uppercase">
-                            {isFiltered ? `${activeLgaTab}` : `${assignedLgasArray.length} LGAs`}
-                        </p>
-                        <p className="text-[11px] font-semibold text-[#8A7968] mt-1 uppercase">
-                            {isFiltered ? 'Single LGA Filter Active' : assignedLgasArray.join(', ')}
-                        </p>
-                        <div className="w-full bg-[#FAF6F0] h-1.5 rounded-full mt-3 overflow-hidden border border-[#8A7968]/10">
-                            <div className="bg-[#291C14] h-full transition-all duration-500 ease-out" style={{ width: `100%` }} />
+                    {/* Card 1: Assigned Scope */}
+                    <div className="bg-[#ffffff] p-5 rounded-xl border border-[#6B7280]/20 shadow-sm flex flex-col justify-between">
+                        <div>
+                            <div className="flex items-center justify-between text-[#6B7280]">
+                                <span className="text-xs font-bold uppercase tracking-wider">Location Scope</span>
+                                <MapPin className="h-4 w-4 text-[#1E3A8A]" />
+                            </div>
+                            <p className="text-2xl font-bold tracking-tight text-[#111827] mt-3 uppercase">
+                                {isFiltered ? `${activeLgaTab}` : `${assignedLgasArray.length} LGAs`}
+                            </p>
+                        </div>
+                        <div className="mt-4">
+                            <p className="text-[11px] text-[#6B7280] font-medium uppercase truncate">{isFiltered ? 'Single LGA Filter Active' : assignedLgasArray.join(', ')}</p>
+                            <div className="w-full bg-[#F9FAFB] h-1.5 rounded-full mt-2 overflow-hidden border border-[#6B7280]/10">
+                                <div className="bg-[#1E3A8A] h-full" style={{ width: `100%` }} />
+                            </div>
                         </div>
                     </div>
 
-                    {/* Card 2: Ward Coordinators Allocation */}
-                    <div className="bg-white p-5 rounded-2xl border border-[#8A7968]/20 relative overflow-hidden shadow-sm transition-all duration-300 hover:shadow-md hover:-translate-y-0.5 group">
-                        <div className="absolute top-0 left-0 w-1.5 h-full bg-[#9A6749] transition-all group-hover:w-2" />
-                        <p className="text-xs font-bold uppercase tracking-wider text-[#8A7968]">Ward Coordinator Coverage</p>
-                        <p className="text-2xl font-black tracking-tight text-[#291C14] mt-2">
-                            {wardSaturation}%
-                        </p>
-                        <p className="text-[11px] font-semibold text-[#8A7968] mt-1">
-                            {totalCoordinatorsFound} covered of {calculatedTotalWards} total tracking wards
-                        </p>
-                        <div className="w-full bg-[#FAF6F0] h-1.5 rounded-full mt-3 overflow-hidden border border-[#8A7968]/10">
-                            <div className="bg-[#9A6749] h-full transition-all duration-500 ease-out" style={{ width: `${wardSaturation}%` }} />
+                    {/* Card 2: Ward Coordinator Coverage */}
+                    <div className="bg-[#ffffff] p-5 rounded-xl border border-[#6B7280]/20 shadow-sm flex flex-col justify-between">
+                        <div>
+                            <div className="flex items-center justify-between text-[#6B7280]">
+                                <span className="text-xs font-bold uppercase tracking-wider">Ward Coordinator Coverage</span>
+                                <Users className="h-4 w-4 text-[#172554]" />
+                            </div>
+                            <p className="text-2xl font-bold tracking-tight text-[#111827] mt-3">
+                                {wardSaturation}%
+                            </p>
+                        </div>
+                        <div className="mt-4">
+                            <p className="text-[11px] text-[#6B7280] font-medium">{totalCoordinatorsFound} covered of {calculatedTotalWards} targets</p>
+                            <div className="w-full bg-[#F9FAFB] h-1.5 rounded-full mt-2 overflow-hidden border border-[#6B7280]/10">
+                                <div className="bg-[#172554] h-full transition-all duration-500 ease-out" style={{ width: `${wardSaturation}%` }} />
+                            </div>
                         </div>
                     </div>
 
-                    {/* Card 3: Polling Agents Allocation */}
-                    <div className="bg-white p-5 rounded-2xl border border-[#8A7968]/20 relative overflow-hidden shadow-sm transition-all duration-300 hover:shadow-md hover:-translate-y-0.5 group">
-                        <div className="absolute top-0 left-0 w-1.5 h-full bg-emerald-600 transition-all group-hover:w-2" />
-                        <p className="text-xs font-bold uppercase tracking-wider text-[#8A7968]">Polling Agent Assignment</p>
-                        <p className="text-2xl font-black tracking-tight text-emerald-600 mt-2">
-                            {agentSaturation}%
-                        </p>
-                        <p className="text-[11px] font-semibold text-[#8A7968] mt-1">
-                            {totalAgentsFound} active units covered of {calculatedTotalPus} total units
-                        </p>
-                        <div className="w-full bg-[#FAF6F0] h-1.5 rounded-full mt-3 overflow-hidden border border-[#8A7968]/10">
-                            <div className="bg-emerald-600 h-full transition-all duration-500 ease-out" style={{ width: `${agentSaturation}%` }} />
+                    {/* Card 3: Polling Agent Assignment */}
+                    <div className="bg-[#ffffff] p-5 rounded-xl border border-[#6B7280]/20 shadow-sm flex flex-col justify-between">
+                        <div>
+                            <div className="flex items-center justify-between text-[#6B7280]">
+                                <span className="text-xs font-bold uppercase tracking-wider">Polling Agent Assignment</span>
+                                <Users className="h-4 w-4 text-[#16A34A]" />
+                            </div>
+                            <p className="text-2xl font-bold tracking-tight text-[#16A34A] mt-3">
+                                {agentSaturation}%
+                            </p>
+                        </div>
+                        <div className="mt-4">
+                            <p className="text-[11px] text-[#6B7280] font-medium">{totalAgentsFound} assigned of {calculatedTotalPus} total units</p>
+                            <div className="w-full bg-[#F9FAFB] h-1.5 rounded-full mt-2 overflow-hidden border border-[#6B7280]/10">
+                                <div className="bg-[#16A34A] h-full transition-all duration-500 ease-out" style={{ width: `${agentSaturation}%` }} />
+                            </div>
                         </div>
                     </div>
 
-                    {/* Card 4: Result Sheet Audits / Scans */}
-                    <div className="bg-white p-5 rounded-2xl border border-[#8A7968]/20 relative overflow-hidden shadow-sm transition-all duration-300 hover:shadow-md hover:-translate-y-0.5 group">
-                        <div className="absolute top-0 left-0 w-1.5 h-full bg-blue-600 transition-all group-hover:w-2" />
-                        <p className="text-xs font-bold uppercase tracking-wider text-[#8A7968]">Result Sheet Scans</p>
-                        <p className="text-2xl font-black tracking-tight text-blue-600 mt-2">
-                            {scanSaturation}%
-                        </p>
-                        <p className="text-[11px] font-semibold text-[#8A7968] mt-1">
-                            {verifiedScannedCount} verified scans across {calculatedTotalPus} total units
-                        </p>
-                        <div className="w-full bg-[#FAF6F0] h-1.5 rounded-full mt-3 overflow-hidden border border-[#8A7968]/10">
-                            <div className="bg-blue-600 h-full transition-all duration-500 ease-out" style={{ width: `${scanSaturation}%` }} />
+                    {/* Card 4: Result Sheet Scans */}
+                    <div className="bg-[#ffffff] p-5 rounded-xl border border-[#6B7280]/20 shadow-sm flex flex-col justify-between">
+                        <div>
+                            <div className="flex items-center justify-between text-[#6B7280]">
+                                <span className="text-xs font-bold uppercase tracking-wider">Result Sheet Scans</span>
+                                <FileText className="h-4 w-4 text-[#D97706]" />
+                            </div>
+                            <p className="text-2xl font-bold tracking-tight text-[#D97706] mt-3">
+                                {scanSaturation}%
+                            </p>
+                        </div>
+                        <div className="mt-4">
+                            <p className="text-[11px] text-[#6B7280] font-medium">{verifiedScannedCount} verified scans across {calculatedTotalPus} units</p>
+                            <div className="w-full bg-[#F9FAFB] h-1.5 rounded-full mt-2 overflow-hidden border border-[#6B7280]/10">
+                                <div className="bg-[#D97706] h-full transition-all duration-500 ease-out" style={{ width: `${scanSaturation}%` }} />
+                            </div>
                         </div>
                     </div>
 
                 </div>
 
-                {/* Regional Matrices Mapping Breakdown */}
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                {/* Breakdown Data Sections */}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
 
-                    {/* Wards Verification Mapping Overview Table */}
-                    <div className="lg:col-span-2 bg-white p-6 rounded-2xl border border-[#8A7968]/20 shadow-sm transition-all">
-                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 border-b border-[#FAF6F0] pb-4 gap-2">
+                    {/* Left Grid: Ward Supervisor Roster (Compact Microcard Layout) */}
+                    <div className="bg-[#ffffff] p-6 rounded-xl border border-[#6B7280]/20 shadow-sm flex flex-col h-[480px]">
+                        <div className="flex-shrink-0 mb-4 pb-3 border-b border-[#F9FAFB] flex justify-between items-start gap-2">
                             <div>
-                                <h3 className="text-xs font-black tracking-wider text-[#291C14] uppercase">
-                                    WARD SUPERVISOR DIRECTORY {isFiltered && `— ${activeLgaTab.toUpperCase()}`}
-                                </h3>
-                                <p className="text-[11px] font-medium text-[#8A7968] mt-0.5">Onboarded team officers managing localized ward sectors</p>
+                                <div className="flex items-center gap-2 mb-1">
+                                    <ShieldCheck className="h-4 w-4 text-[#1E3A8A]" />
+                                    <h3 className="text-sm font-bold text-[#111827] uppercase tracking-wider">
+                                        Ward Supervisors
+                                    </h3>
+                                </div>
+                                <p className="text-[11px] font-medium text-[#6B7280]">Personnel inside your scope</p>
                             </div>
 
-                            {/* Account Creation Access Intercept Node Link */}
-                            <Link href="/dashboard/lga/coordinators" className="bg-[#291C14] hover:bg-[#4A3B32] text-white text-[10px] font-bold px-4 py-2.5 rounded-xl transition-all uppercase tracking-wider whitespace-nowrap shadow-sm active:scale-[0.98]">
-                                Create Ward Account
+                            <Link href="/dashboard/lga/coordinators" className="inline-flex items-center gap-1 bg-[#1E3A8A] hover:bg-[#172554] text-white text-[10px] font-bold px-3 py-1.5 rounded-lg transition-all uppercase tracking-wider shadow-sm flex-shrink-0">
+                                <Plus className="w-3 h-3" /> Add Account
                             </Link>
                         </div>
 
-                        <div className="overflow-x-auto rounded-xl border border-[#8A7968]/10">
-                            <table className="w-full text-left border-collapse">
-                                <thead>
-                                    <tr className="border-b border-[#8A7968]/20 text-[10px] font-black text-[#8A7968] uppercase tracking-wider bg-[#FAF6F0]">
-                                        <th className="p-3.5">Supervisor Name</th>
-                                        <th className="p-3.5">LGA Boundary</th>
-                                        <th className="p-3.5">Assigned Sectors</th>
-                                        <th className="p-3.5">Contact Line</th>
-                                        <th className="p-3.5 text-right">Registration Date</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="text-xs font-medium divide-y divide-[#FAF6F0]">
-                                    {coordinatorsList && coordinatorsList.length > 0 ? (
-                                        coordinatorsList.map((coordinator) => (
-                                            <tr key={coordinator.id} className="hover:bg-[#FAF6F0]/50 transition-colors duration-150 text-[#291C14]">
-                                                <td className="p-3.5 font-bold">{coordinator.full_name}</td>
-                                                <td className="p-3.5 uppercase font-black text-[10px] text-[#9A6749]">
-                                                    {coordinator.assigned_lgas && coordinator.assigned_lgas.length > 0
-                                                        ? coordinator.assigned_lgas.join(', ')
-                                                        : assignedLgasArray.join(', ').toUpperCase()}
-                                                </td>
-                                                <td className="p-3.5 font-semibold text-[#4A3B32]">
-                                                    {coordinator.assigned_wards && coordinator.assigned_wards.length > 0
-                                                        ? coordinator.assigned_wards.join(', ')
-                                                        : 'No Wards Configured'}
-                                                </td>
-                                                <td className="p-3.5 text-[#8A7968] font-mono">{coordinator.phone || '—'}</td>
-                                                <td className="p-3.5 text-right font-bold text-[#8A7968]">
-                                                    {coordinator.created_at ? new Date(coordinator.created_at).toLocaleDateString('en-GB') : '—'}
-                                                </td>
-                                            </tr>
-                                        ))
-                                    ) : (
-                                        <tr>
-                                            <td colSpan={5} className="p-8 text-center font-bold text-[#8A7968] bg-[#FAF6F0]/20 italic">
-                                                No Ward Coordinators currently registered under your chosen local government filter scope.
-                                            </td>
-                                        </tr>
-                                    )}
-                                </tbody>
-                            </table>
+                        {/* Scroll Container for Ward Cards */}
+                        <div className={`space-y-3 overflow-y-auto flex-grow pr-1.5 ${customScrollbarClasses}`}>
+                            {coordinatorsList && coordinatorsList.length > 0 ? (
+                                coordinatorsList.map((coordinator) => (
+                                    <div key={coordinator.id} className="p-3.5 bg-[#F9FAFB] rounded-lg border border-[#6B7280]/15 text-xs">
+                                        <div className="flex justify-between items-start gap-2 mb-1.5">
+                                            <span className="font-bold text-[#111827] text-sm">{coordinator.full_name}</span>
+                                            <span className="text-[9px] font-mono font-bold bg-[#1E3A8A]/10 text-[#1E3A8A] px-2 py-0.5 rounded uppercase tracking-wider flex-shrink-0">
+                                                {coordinator.assigned_lgas && coordinator.assigned_lgas.length > 0
+                                                    ? coordinator.assigned_lgas[0]
+                                                    : assignedLgasArray[0]}
+                                            </span>
+                                        </div>
+
+                                        <div className="space-y-1 text-[#6B7280] font-medium">
+                                            <p className="text-[11px] leading-normal text-[#111827]">
+                                                <span className="text-[#6B7280] font-semibold text-[10px] uppercase tracking-wide block">Assigned Sectors:</span>
+                                                {coordinator.assigned_wards && coordinator.assigned_wards.length > 0
+                                                    ? coordinator.assigned_wards.join(', ')
+                                                    : 'No Wards Configured'}
+                                            </p>
+                                            <div className="flex justify-between items-center text-[10px] pt-1.5 border-t border-[#6B7280]/10 mt-1.5">
+                                                <span className="font-mono text-[#1E3A8A]">{coordinator.phone || 'No Contact Line'}</span>
+                                                <span className="text-[9px] text-[#6B7280]">Registered {coordinator.created_at ? new Date(coordinator.created_at).toLocaleDateString('en-GB') : '—'}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))
+                            ) : (
+                                <div className="text-center py-12 border border-dashed border-[#6B7280]/20 rounded-lg bg-[#F9FAFB]/50">
+                                    <p className="text-xs font-medium text-[#6B7280] italic px-4">
+                                        No ward supervisors currently registered under your chosen framework scope.
+                                    </p>
+                                </div>
+                            )}
                         </div>
                     </div>
 
-                    {/* Right Hand Sidebar Actions & Log Feed Matrix */}
-                    <div className="bg-white p-6 rounded-2xl border border-[#8A7968]/20 flex flex-col justify-between shadow-sm transition-all">
-                        <div>
-                            <h3 className="text-xs font-black tracking-wider text-[#291C14] mb-0.5 uppercase">
-                                System Activity Logs {isFiltered && `— ${activeLgaTab.toUpperCase()}`}
-                            </h3>
-                            <p className="text-[11px] font-medium text-[#8A7968] mb-6">Real-time operational verification feed</p>
-
-                            <div className="space-y-4">
-                                {activityLogs && activityLogs.length > 0 ? (
-                                    activityLogs.map((log) => (
-                                        <div key={log.id} className="p-3.5 bg-[#FAF6F0] rounded-xl border border-[#8A7968]/15 text-xs transition-all hover:border-[#8A7968]/30">
-                                            <div className="flex justify-between font-black text-[9px] uppercase tracking-wider text-[#8A7968] mb-1.5">
-                                                <span className={log.event_type === 'ALERT' ? 'text-amber-700' : 'text-[#9A6749]'}>
-                                                    {log.lga_name?.toUpperCase()} • {log.event_type?.replace(/_/g, ' ')}
-                                                </span>
-                                                <span className="font-mono">
-                                                    {log.created_at ? new Date(log.created_at).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) : '--:--'} WAT
-                                                </span>
-                                            </div>
-                                            <p className="font-semibold text-[#291C14] leading-relaxed">{log.description}</p>
-                                        </div>
-                                    ))
-                                ) : (
-                                    <div className="text-center py-12 border border-dashed border-[#8A7968]/20 rounded-xl bg-[#FAF6F0]/20">
-                                        <p className="text-xs font-bold text-[#8A7968] italic">
-                                            No system logs recorded inside this local government jurisdiction boundary framework.
-                                        </p>
-                                    </div>
-                                )}
+                    {/* Right Grid: Profile-Derived System Activity Logs Feed */}
+                    <div className="lg:col-span-2 bg-[#ffffff] p-6 rounded-xl border border-[#6B7280]/20 shadow-sm flex flex-col h-[480px]">
+                        <div className="flex-shrink-0 mb-4 pb-3 border-b border-[#F9FAFB]">
+                            <div className="flex items-center gap-2 mb-1">
+                                <Activity className="h-4 w-4 text-[#1E3A8A]" />
+                                <h3 className="text-sm font-bold text-[#111827] uppercase tracking-wider">
+                                    Activity Timeline {isFiltered && `— ${activeLgaTab.toUpperCase()}`}
+                                </h3>
                             </div>
+                            <p className="text-[11px] font-medium text-[#6B7280]">Real-time operational log telemetry tracker generated from workforce profile mappings</p>
                         </div>
 
-                        {/* Informative verification safety layout footer */}
-                        <div className="mt-6 pt-4 border-t border-[#FAF6F0] text-center">
-                            <p className="text-[10px] font-semibold text-[#8A7968] italic leading-normal">
-                                Regional Security Tier — All structural data syncs securely with the master INEC configuration server.
+                        {/* Scroll Container for Logs */}
+                        <div className={`space-y-3 overflow-y-auto flex-grow pr-1.5 ${customScrollbarClasses}`}>
+                            {activityLogs && activityLogs.length > 0 ? (
+                                activityLogs.map((log) => (
+                                    <div key={log.id} className="p-3.5 bg-[#F9FAFB] rounded-lg border border-[#6B7280]/15 text-xs transition-all hover:border-[#1E3A8A]/30">
+                                        <div className="flex justify-between font-bold text-[9px] uppercase tracking-wider text-[#6B7280] mb-1.5">
+                                            <span className="flex items-center gap-1 text-[#1E3A8A]">
+                                                <CheckCircle2 className="h-3 w-3 text-[#1E3A8A]" />
+                                                {log.lga_name?.toUpperCase()} • {log.event_type?.replace(/_/g, ' ')}
+                                            </span>
+                                            <span className="font-mono">
+                                                {log.created_at ? new Date(log.created_at).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) : '--:--'} WAT
+                                            </span>
+                                        </div>
+                                        <p className="font-medium text-[#111827] leading-relaxed">{log.description}</p>
+                                    </div>
+                                ))
+                            ) : (
+                                <div className="text-center py-12 border border-dashed border-[#6B7280]/20 rounded-lg bg-[#F9FAFB]/50">
+                                    <p className="text-xs font-medium text-[#6B7280] italic">
+                                        No active staff registrations or deployments available to populate the tracking matrix timeline yet.
+                                    </p>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Security Footer block safely nested inside the card wrapper */}
+                        <div className="flex-shrink-0 mt-4 pt-3 border-t border-[#F9FAFB] text-center flex items-center justify-center gap-1.5">
+                            <ShieldCheck className="w-3.5 h-3.5 text-[#6B7280]" />
+                            <p className="text-[10px] font-medium text-[#6B7280] italic">
+                                Secure Connection — System metrics are cryptographically verified by the central boundary core.
                             </p>
                         </div>
                     </div>

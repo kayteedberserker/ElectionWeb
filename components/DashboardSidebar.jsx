@@ -3,6 +3,17 @@
 import React, { useState, useTransition } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import {
+    LayoutDashboard,
+    BarChart3,
+    Users,
+    Map,
+    Settings,
+    LogOut,
+    Menu,
+    X,
+    UserCircle
+} from 'lucide-react';
 
 export default function DashboardSidebar({ userMetadata, onLogout }) {
     const [isOpen, setIsOpen] = useState(false);
@@ -12,29 +23,29 @@ export default function DashboardSidebar({ userMetadata, onLogout }) {
     const userRole = userMetadata?.role;
     const userName = userMetadata?.full_name;
 
+    // Professional navigation mapping
     const navigationLinks = {
         candidate: [
-            { label: 'CAMPAIGN OVERVIEW', path: '/dashboard/candidate' },
-            { label: 'RESULT COLLATION', path: '/dashboard/candidate/results' },
-            { label: 'LGA SUPERVISORS', path: '/dashboard/candidate/supervisors' },
-            { label: 'LIVE OBSERVATION', path: '/dashboard/candidate/live-map' },
-            { label: 'EDIT PROFILE', path: '/dashboard/candidate/profile' },
+            { label: 'Dashboard', path: '/dashboard/candidate', icon: LayoutDashboard },
+            { label: 'Result Analysis', path: '/dashboard/candidate/results', icon: BarChart3 },
+            { label: 'LGA Management', path: '/dashboard/candidate/supervisors', icon: Users },
+            { label: 'Real-Time Map', path: '/dashboard/candidate/live-map', icon: Map },
+            { label: 'Account Settings', path: '/dashboard/candidate/profile', icon: Settings },
         ],
         lga_supervisor: [
-            { label: 'LGA OVERVIEW', path: '/dashboard/lga' },
-            { label: 'WARD SUPERVISORS', path: '/dashboard/lga/coordinators' },
-            { label: 'LIVE OBSERVATION', path: '/dashboard/lga/live-map' },
-            { label: 'EDIT PROFILE', path: '/dashboard/lga/profile' },
+            { label: 'LGA Overview', path: '/dashboard/lga', icon: LayoutDashboard },
+            { label: 'Ward Coordination', path: '/dashboard/lga/coordinators', icon: Users },
+            { label: 'Real-Time Map', path: '/dashboard/lga/live-map', icon: Map },
+            { label: 'Account Settings', path: '/dashboard/lga/profile', icon: Settings },
         ],
         ward_supervisor: [
-            { label: 'WARD STANDINGS', path: '/dashboard/ward' },
-            { label: 'PU AGENTS', path: '/dashboard/ward/coordinators' },
-            { label: 'LIVE OBSERVATION', path: '/dashboard/ward/live-map' },
-            { label: 'EDIT PROFILE', path: '/dashboard/ward/profile' },
+            { label: 'Ward Overview', path: '/dashboard/ward', icon: LayoutDashboard },
+            { label: 'Agent Registry', path: '/dashboard/ward/coordinators', icon: Users },
+            { label: 'Real-Time Map', path: '/dashboard/ward/live-map', icon: Map },
+            { label: 'Account Settings', path: '/dashboard/ward/profile', icon: Settings },
         ]
     };
 
-    // Normalize lookup to safely handle both lowercase and uppercase role mutations from DB
     const normalizedRole = userRole?.toLowerCase();
     const activeLinks = navigationLinks[normalizedRole] || navigationLinks[userRole] || [];
 
@@ -51,80 +62,63 @@ export default function DashboardSidebar({ userMetadata, onLogout }) {
 
     return (
         <>
-            {/* Mobile Trigger Header Bar (Hidden on Desktop) */}
-            <header className="lg:hidden fixed top-0 left-0 right-0 h-16 bg-white border-b-2 border-[#8A7968]/20 px-4 flex items-center justify-between z-40 shadow-sm">
-                <div className="flex flex-col">
-                    <span className="text-xs font-black tracking-tight text-[#291C14]">INEC PORTAL</span>
-                    {userRole && (
-                        <span className="text-[9px] font-bold text-[#9A6749] tracking-wider uppercase">
-                            {userRole.replace(/_/g, ' ')} PANEL
-                        </span>
-                    )}
-                </div>
-                <button
-                    onClick={toggleSidebar}
-                    className="p-2 border-2 border-[#8A7968]/30 rounded-xl bg-[#FAF6F0] text-[#291C14] font-bold text-xs uppercase tracking-wide transition-all active:scale-95"
-                >
-                    {isOpen ? 'Close Menu' : 'Open Menu'}
+            {/* Mobile Header */}
+            <header className="lg:hidden fixed top-0 left-0 right-0 h-16 bg-white border-b border-primary/10 px-4 flex items-center justify-between z-40">
+                <div className="font-bold text-primary tracking-tight">NookPoll</div>
+                <button onClick={toggleSidebar} className="p-2 text-primary">
+                    {isOpen ? <X size={24} /> : <Menu size={24} />}
                 </button>
             </header>
 
-            {/* Backdrop Overlay for mobile slide-in tracking */}
+            {/* Backdrop */}
             {isOpen && (
-                <div
-                    className="lg:hidden fixed inset-0 bg-[#291C14]/40 backdrop-blur-sm z-40 transition-opacity duration-300"
-                    onClick={toggleSidebar}
-                />
+                <div className="lg:hidden fixed inset-0 bg-textMain/20 backdrop-blur-sm z-40" onClick={toggleSidebar} />
             )}
 
-            {/* Main Navigation Sidebar Shell (Locked to the Left Side) */}
+            {/* Sidebar */}
             <aside className={`
-                fixed top-0 left-0 h-full w-72 bg-white border-r-2 border-[#8A7968]/20 p-6 z-50 shadow-xl
+                fixed top-0 left-0 h-full w-72 bg-white border-r border-primary/10 p-6 z-50 shadow-2xl
                 transform transition-transform duration-300 ease-in-out flex flex-col justify-between
                 lg:translate-x-0 ${isOpen ? 'translate-x-0' : '-translate-x-full'}
                 pt-24 lg:pt-8
             `}>
                 <div>
-                    {/* User Identity Section */}
-                    <div className="mb-8 p-4 rounded-xl bg-[#FAF6F0] border-2 border-[#8A7968]/20 shadow-xs">
-                        <span className="text-[9px] font-mono font-bold tracking-widest text-[#8A7968] block uppercase mb-0.5">Active User</span>
-
-                        {userName ? (
-                            <h4 className="text-sm font-black text-[#291C14] truncate uppercase">{userName}</h4>
-                        ) : (
-                            <div className="flex items-center space-x-2 py-1">
-                                <div className="w-2 h-2 bg-[#9A6749] rounded-full animate-pulse" />
-                                <span className="text-xs font-bold text-[#8A7968] tracking-wide animate-pulse">LOADING PROFILE...</span>
-                            </div>
-                        )}
-
-                        {userRole && (
-                            <span className="inline-block text-[10px] font-mono font-bold mt-2 text-[#9A6749] bg-[#9A6749]/10 px-2 py-0.5 rounded border border-[#9A6749]/20 uppercase tracking-wide">
-                                {userRole.replace(/_/g, ' ')}
-                            </span>
-                        )}
+                    {/* Brand Logo */}
+                    <div className="mb-10 px-2">
+                        <h1 className="text-2xl font-extrabold text-primary tracking-tighter">NookPoll</h1>
+                        <p className="text-[10px] font-bold text-accent uppercase tracking-widest mt-1">Command System</p>
                     </div>
 
-                    {/* Navigation Items Link List */}
-                    <nav className="space-y-2">
-                        <span className="text-[10px] font-bold tracking-widest text-[#8A7968] block mb-3 uppercase">Menu Options</span>
-                        {activeLinks.length === 0 && userRole && (
-                            <p className="text-xs font-medium text-amber-600 bg-amber-50 border border-amber-200 rounded-lg p-2.5">
-                                No routes registered for this account tier.
-                            </p>
-                        )}
+                    {/* Profile Section */}
+                    <div className="mb-8 p-4 rounded-xl bg-background border border-primary/5">
+                        <div className="flex items-center gap-3">
+                            <div className="p-2 bg-primary/10 rounded-full text-primary">
+                                <UserCircle size={24} />
+                            </div>
+                            <div className="overflow-hidden">
+                                <p className="text-xs font-bold text-textMuted uppercase">Active User</p>
+                                <h4 className="text-sm font-bold text-textMain truncate">{userName || 'Loading...'}</h4>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Navigation */}
+                    <nav className="space-y-1">
+                        <p className="text-[10px] font-bold text-textMuted uppercase tracking-widest px-4 mb-2">Modules</p>
                         {activeLinks.map((node, index) => {
+                            const Icon = node.icon;
                             const isCurrentPath = pathname === node.path;
                             return (
                                 <Link
                                     key={index}
                                     href={node.path}
                                     onClick={() => setIsOpen(false)}
-                                    className={`block w-full text-left px-4 py-3 rounded-xl text-xs font-bold uppercase tracking-wider border-2 transition-all duration-200 ${isCurrentPath
-                                        ? 'bg-[#9A6749] text-white border-[#9A6749] shadow-md translate-x-1'
-                                        : 'bg-white text-[#291C14] border-[#8A7968]/10 hover:border-[#8A7968]/40 hover:bg-[#FAF6F0] hover:translate-x-0.5'
+                                    className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all ${isCurrentPath
+                                        ? 'bg-primary text-white shadow-lg'
+                                        : 'text-textMuted hover:bg-background hover:text-primary'
                                         }`}
                                 >
+                                    <Icon size={18} />
                                     {node.label}
                                 </Link>
                             );
@@ -132,23 +126,14 @@ export default function DashboardSidebar({ userMetadata, onLogout }) {
                     </nav>
                 </div>
 
-                {/* Account Sign Out Section */}
-                <div className="border-t-2 border-[#FAF6F0] pt-4">
-                    <button
-                        onClick={handleDisconnect}
-                        disabled={isPending}
-                        className="w-full bg-[#dc2626]/5 border-2 border-[#dc2626]/20 hover:border-[#dc2626]/50 hover:bg-[#dc2626]/10 text-[#dc2626] text-xs font-bold uppercase tracking-wider py-3 rounded-xl transition-all text-center disabled:opacity-50 flex items-center justify-center space-x-2"
-                    >
-                        {isPending ? (
-                            <>
-                                <div className="w-3.5 h-3.5 border-2 border-[#dc2626] border-t-transparent rounded-full animate-spin" />
-                                <span>Logging out...</span>
-                            </>
-                        ) : (
-                            <span>Log Out Account</span>
-                        )}
-                    </button>
-                </div>
+                {/* Sign Out */}
+                <button
+                    onClick={handleDisconnect}
+                    disabled={isPending}
+                    className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border border-danger/20 text-danger hover:bg-danger/5 transition-all text-sm font-bold"
+                >
+                    {isPending ? 'Signing Out...' : <> <LogOut size={16} /> Sign Out</>}
+                </button>
             </aside>
         </>
     );

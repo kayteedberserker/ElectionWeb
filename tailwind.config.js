@@ -1,4 +1,3 @@
-// tailwind.config.js
 /** @type {import('tailwindcss').Config} */
 module.exports = {
     content: [
@@ -9,19 +8,23 @@ module.exports = {
     theme: {
         extend: {
             colors: {
+                // NookPoll Branding
                 primary: {
-                    DEFAULT: '#9A6749', // Warm Oak / Lighter Walnut Brown  // Soft Camel/Tan Accent
+                    DEFAULT: '#1E3A8A', // Deep Blue for Trust
+                    dark: '#172554',
                 },
                 accent: {
-                    DEFAULT: '#15803d', // Deep Emerald Green
-                    light: '#d1fae5',   // Mint hint for success badges
+                    DEFAULT: '#16A34A', // Green for Democracy/Growth
+                    light: '#DCFCE7',
                 },
-                danger: '#dc2626',    // Clean Red
-                warning: '#ea580c',   // Burnt Orange
-                background: '#FAF6F0',// Warm Linen Ivory White
-                card: '#ffffff',      // Crisp White
-                textMain: '#291C14',  // Deep Espresso
-                textMuted: '#8A7968', // Muted Taupe Grey
+                gold: {
+                    DEFAULT: '#D97706', // Premium Accent
+                    light: '#F59E0B',
+                },
+                background: '#F9FAFB', // Clean Light Gray
+                card: '#ffffff',
+                textMain: '#111827', // Slate Black
+                textMuted: '#6B7280', // Professional Grey
             },
         },
     },

@@ -1,8 +1,7 @@
-// app/auth/actions.js
 'use server';
 
 import { createServerClient } from '@supabase/ssr';
-import { cookies } from 'next/headers';
+import { cookies, headers } from 'next/headers'; // Added headers here
 
 // Helper function to initialize the Supabase client inside Server Actions
 async function getSupabaseClient() {
@@ -47,7 +46,6 @@ export async function signIn(email, password) {
             return { success: false, message: error.message };
         }
 
-        // Extract the role from user metadata to determine the destination dashboard
         const role = data.user?.user_metadata?.role || 'candidate';
         let redirectPath = '/dashboard/candidate';
 
@@ -71,7 +69,6 @@ export async function signUpCandidate({ email, password, fullName, contestedSeat
             email,
             password,
             options: {
-                // Storing system operational metadata within Supabase's secure user metadata object
                 data: {
                     role: 'candidate',
                     full_name: fullName,
@@ -84,7 +81,6 @@ export async function signUpCandidate({ email, password, fullName, contestedSeat
             return { success: false, message: error.message };
         }
 
-        // If Supabase is configured for email confirmation, registration won't log them in immediately
         if (data.session === null) {
             return {
                 success: true,
@@ -96,5 +92,59 @@ export async function signUpCandidate({ email, password, fullName, contestedSeat
         return { success: true, redirectPath: '/dashboard/candidate/profile' };
     } catch (err) {
         return { success: false, message: 'An error occurred during account creation.' };
+    }
+}
+
+/**
+ * Initiates a password reset flow
+ */
+export async function resetPassword(email) {
+    try {
+        const supabase = await getSupabaseClient();
+
+        // Await the headers() function
+        const headersList = await headers();
+        const origin = headersList.get('origin') || process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+
+        const { error } = await supabase.auth.resetPasswordForEmail(email, {
+            redirectTo: `${origin}/auth/callback?next=/auth/update-password`,
+        });
+
+        if (error) {
+            return { success: false, message: error.message };
+        }
+
+        return { success: true };
+    } catch (err) {
+        return { success: false, message: 'An error occurred while trying to send the reset link.' };
+    }
+}
+
+/**
+ * Resends a sign-up confirmation link
+ */
+export async function resendConfirmationEmail(email) {
+    try {
+        const supabase = await getSupabaseClient();
+
+        // Await the headers() function
+        const headersList = await headers();
+        const origin = headersList.get('origin') || process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+
+        const { error } = await supabase.auth.resend({
+            type: 'signup',
+            email: email,
+            options: {
+                emailRedirectTo: `${origin}/auth/callback`,
+            },
+        });
+
+        if (error) {
+            return { success: false, message: error.message };
+        }
+
+        return { success: true };
+    } catch (err) {
+        return { success: false, message: 'An error occurred while trying to resend the confirmation email.' };
     }
 }

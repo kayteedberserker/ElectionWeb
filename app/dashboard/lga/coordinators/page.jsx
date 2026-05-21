@@ -2,6 +2,19 @@
 
 import React, { useState, useEffect, useTransition } from 'react';
 import { createBrowserClient } from '@supabase/ssr';
+import {
+    MapPin,
+    User,
+    Mail,
+    Lock,
+    AlertTriangle,
+    ClipboardList,
+    Plus,
+    X,
+    CheckCircle2,
+    Loader2,
+    Wand2
+} from 'lucide-react';
 import LoadingOverlay from '../../../../components/LoadingOverlay';
 
 export default function LgaSupervisorManageWardsPage() {
@@ -16,18 +29,19 @@ export default function LgaSupervisorManageWardsPage() {
     });
 
     // Dynamic Lists from Database
-    const [jurisdictionWards, setJurisdictionWards] = useState([]); // Holds all Wards under supervisor's assigned LGAs
-    const [activeWardSupervisors, setActiveWardSupervisors] = useState([]); // Ward supervisors fetched from database
+    const [jurisdictionWards, setJurisdictionWards] = useState([]);
+    const [activeWardSupervisors, setActiveWardSupervisors] = useState([]);
 
     // Form inputs variables state
     const [fullName, setFullName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    const [selectedTargetWard, setSelectedTargetWard] = useState(''); // Chosen Ward Name for assignment
+    const [selectedTargetWard, setSelectedTargetWard] = useState('');
 
     // State for Reusable Supervisor Logic Selection
     const [useExistingSupervisor, setUseExistingSupervisor] = useState(false);
     const [selectedExistingEmail, setSelectedExistingEmail] = useState('');
+    const [isGeneratingEmail, setIsGeneratingEmail] = useState(false);
 
     const [isAssigningMode, setIsAssigningMode] = useState(false);
 
@@ -35,7 +49,6 @@ export default function LgaSupervisorManageWardsPage() {
     const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
     const supabase = typeof window !== 'undefined' ? createBrowserClient(supabaseUrl, supabaseKey) : null;
 
-    // Helper to extract clean unique list of supervisors out of current database metrics
     const getUniqueSupervisorsList = () => {
         const seen = new Set();
         return activeWardSupervisors.filter(sup => {
@@ -54,7 +67,7 @@ export default function LgaSupervisorManageWardsPage() {
             if (matchedSup) {
                 setFullName(matchedSup.name || '');
                 setEmail(matchedSup.email || '');
-                setPassword(''); // Blank out password requirement for existing instances
+                setPassword('');
             }
         } else if (!useExistingSupervisor) {
             setFullName('');
@@ -68,14 +81,12 @@ export default function LgaSupervisorManageWardsPage() {
             if (!supabase) return;
             setIsLoading(true);
             try {
-                // 1. Fetch User Session Profile Metadata to detect supervisor boundary scope
                 const { data: { user }, error: userError } = await supabase.auth.getUser();
                 if (userError || !user) {
-                    setStatusMessage({ type: 'error', text: 'Authentication out of sync. Please log in again.' });
+                    setStatusMessage({ type: 'error', text: 'AUTHENTICATION OUT OF SYNC. PLEASE LOG IN AGAIN.' });
                     return;
                 }
 
-                // Cross-reference public profiles table
                 const { data: publicProfile } = await supabase
                     .from('profiles')
                     .select('*')
@@ -93,7 +104,6 @@ export default function LgaSupervisorManageWardsPage() {
                     assignedLgas: assignedLgasArray
                 });
 
-                // 2. Query all Wards across all assigned LGAs in parallel
                 let compiledWards = [];
                 if (stateName && assignedLgasArray.length > 0) {
                     const fetchPromises = assignedLgasArray.map(async (lgaName) => {
@@ -110,11 +120,10 @@ export default function LgaSupervisorManageWardsPage() {
                 }
                 setJurisdictionWards(compiledWards);
 
-                // 3. Directly query public profiles table to fetch ward supervisors registered under this supervisor
                 const { data: activeProfiles, error: profilesFetchError } = await supabase
                     .from('profiles')
                     .select('id, full_name, email, assigned_wards, status')
-                    .eq('lga_supervisor_id', user.id) // Bound directly to this LGA Supervisor's ID
+                    .eq('lga_supervisor_id', user.id)
                     .eq('role', 'WARD_SUPERVISOR');
 
                 if (!profilesFetchError && activeProfiles) {
@@ -146,7 +155,7 @@ export default function LgaSupervisorManageWardsPage() {
 
             } catch (err) {
                 console.error("Error loading supervisor scope context:", err);
-                setStatusMessage({ type: 'error', text: 'Failed to resolve ward jurisdiction structures.' });
+                setStatusMessage({ type: 'error', text: 'FAILED TO RESOLVE WARD STRUCTURES.' });
             } finally {
                 setIsLoading(false);
             }
@@ -155,12 +164,60 @@ export default function LgaSupervisorManageWardsPage() {
         loadScopeAndWardSupervisors();
     }, [supabase]);
 
+    // HIGH-ENTROPY DUMMY EMAIL GENERATOR WITH SYSTEM BREAKERS
+    const generateDummyEmail = async () => {
+        if (!selectedTargetWard) {
+            setStatusMessage({ type: 'error', text: 'PLEASE SELECT A TARGET WARD FIRST TO GENERATE A CONTEXTUAL EMAIL.' });
+            return;
+        }
+
+        setIsGeneratingEmail(true);
+        setStatusMessage({ type: null, text: '' });
+
+        try {
+            let isUnique = false;
+            let generated = '';
+            const cleanWard = selectedTargetWard.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+
+            let attempts = 0;
+            const MAX_ATTEMPTS = 5;
+
+            while (!isUnique && attempts < MAX_ATTEMPTS) {
+                attempts++;
+                const randomNum = Math.floor(100 + Math.random() * 900);
+                const timeStampToken = Date.now().toString().slice(-4);
+                generated = `ward_${cleanWard}_${randomNum}${timeStampToken}@nookpoll.com`;
+
+                const { data } = await supabase
+                    .from('profiles')
+                    .select('id')
+                    .eq('email', generated)
+                    .maybeSingle();
+
+                if (!data) {
+                    isUnique = true;
+                }
+            }
+
+            if (!isUnique) {
+                throw new Error("HIGH EMAIL NAMESPACE DENSITY DETECTED. PLEASE ALTER PARAMETERS OR MANUALLY TYPE THE EMAIL.");
+            }
+
+            setEmail(generated);
+        } catch (err) {
+            console.error("Error generating dummy email:", err);
+            setStatusMessage({ type: 'error', text: err.message.toUpperCase() });
+        } finally {
+            setIsGeneratingEmail(false);
+        }
+    };
+
     const handleCreateWardSupervisor = async (e) => {
         e.preventDefault();
         setStatusMessage({ type: null, text: '' });
 
         if (useExistingSupervisor && !selectedExistingEmail) {
-            setStatusMessage({ type: 'error', text: 'Please select an existing supervisor from the list configuration.' });
+            setStatusMessage({ type: 'error', text: 'PLEASE SELECT AN EXISTING SUPERVISOR FROM THE CONFIGURATION LIST.' });
             return;
         }
 
@@ -172,10 +229,9 @@ export default function LgaSupervisorManageWardsPage() {
                     password: useExistingSupervisor ? null : password,
                     role: 'WARD_SUPERVISOR',
                     assignedState: supervisorProfile.state,
-                    targetUnit: selectedTargetWard // Pass single requested ward name to endpoint safely
+                    targetUnit: selectedTargetWard
                 };
 
-                // Reusing or pointing to your dedicated supervisor creation layout API
                 const res = await fetch('/api/candidate/create-ward-supervisor', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -183,9 +239,8 @@ export default function LgaSupervisorManageWardsPage() {
                 });
 
                 const data = await res.json();
-                if (!res.ok) throw new Error(data.error || "Failed to complete ward supervisor account allocation.");
+                if (!res.ok) throw new Error(data.error || "Failed to complete ward supervisor allocation.");
 
-                // Synchronize active local application state cache array dynamically
                 setActiveWardSupervisors(prev => [
                     ...prev,
                     { name: fullName, unit: selectedTargetWard, email: email.toLowerCase().trim(), status: "ACTIVE" }
@@ -194,11 +249,10 @@ export default function LgaSupervisorManageWardsPage() {
                 setStatusMessage({
                     type: 'success',
                     text: data.isExistingUser
-                        ? `${fullName.toUpperCase()} has been successfully assigned additional management over ward: ${selectedTargetWard.toUpperCase()}.`
-                        : `Ward supervisor account created successfully: ${fullName.toUpperCase()} has been assigned to ${selectedTargetWard.toUpperCase()}.`
+                        ? `${fullName.toUpperCase()} HAS BEEN ASSIGNED MANAGEMENT OVER WARD: ${selectedTargetWard.toUpperCase()}.`
+                        : `ACCOUNT CREATED SUCCESSFULLY: ${fullName.toUpperCase()} HAS BEEN ASSIGNED TO ${selectedTargetWard.toUpperCase()}.`
                 });
 
-                // Clear input form variables
                 setFullName('');
                 setEmail('');
                 setPassword('');
@@ -231,54 +285,37 @@ export default function LgaSupervisorManageWardsPage() {
     };
 
     if (isLoading) {
-        return <LoadingOverlay message="Synchronizing ward jurisdiction boundaries..." />;
+        return <LoadingOverlay message="Loading ward structures..." />;
     }
 
     return (
-        <div className="min-h-screen bg-[#FAF6F0] selection:bg-[#9A6749]/20 p-4 sm:p-6 lg:p-8 text-[#291C14]">
-            {isPending && <LoadingOverlay message="Registering ward supervisor details..." />}
+        <div className="min-h-screen bg-background selection:bg-primary/20 p-4 sm:p-6 lg:p-8 text-textMain">
+            {isPending && <LoadingOverlay message="Updating ward supervisor assignments..." />}
 
-            <style jsx global>{`
-                .custom-scrollbar::-webkit-scrollbar {
-                    width: 6px;
-                }
-                .custom-scrollbar::-webkit-scrollbar-track {
-                    background: #FAF6F0;
-                    border-radius: 8px;
-                }
-                .custom-scrollbar::-webkit-scrollbar-thumb {
-                    background: #8A7968/30;
-                    border-radius: 8px;
-                }
-                .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-                    background: #9A6749/50;
-                }
-            `}</style>
-
-            <header className="max-w-7xl mx-auto mb-8 bg-white p-6 rounded-2xl border-2 border-[#8A7968]/20 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
+            <header className="max-w-7xl mx-auto mb-8 bg-card p-6 rounded-2xl border border-textMuted/20 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
                 <div className="space-y-1">
-                    <span className="text-[10px] font-black uppercase tracking-widest text-[#8A7968] bg-[#FAF6F0] px-2.5 py-1 rounded-md border border-[#8A7968]/10">
-                        Management Dashboard
+                    <span className="text-[10px] font-black uppercase tracking-widest text-textMuted bg-background px-2.5 py-1 rounded-md border border-textMuted/10">
+                        Supervisor Workspace
                     </span>
-                    <h1 className="text-2xl font-black tracking-tight text-[#291C14] uppercase pt-1">
+                    <h1 className="text-2xl font-black tracking-tight text-textMain uppercase pt-1">
                         Ward Supervisor Management
                     </h1>
-                    <p className="text-xs font-bold text-[#9A6749] uppercase tracking-wider flex items-center gap-1">
-                        <span className="inline-block w-2 h-2 bg-[#9A6749] rounded-full animate-pulse" />
+                    <p className="text-xs font-bold text-primary uppercase tracking-wider flex items-center gap-1">
+                        <span className="inline-block w-2 h-2 bg-primary rounded-full animate-pulse" />
                         Jurisdiction: {' '}
-                        <span className="text-[#291C14] font-black tracking-wide bg-[#FAF6F0] px-2 py-0.5 rounded border border-[#8A7968]/10">
+                        <span className="text-textMain font-black tracking-wide bg-background px-2 py-0.5 rounded border border-textMuted/10">
                             {supervisorProfile.state || 'UNKNOWN'} STATE / LGAs: {supervisorProfile.assignedLgas.join(', ').toUpperCase()}
                         </span>
                     </p>
                 </div>
-                <div className="bg-[#FAF6F0] border-2 border-[#8A7968]/20 p-4 rounded-xl min-w-[160px] text-center shadow-inner relative overflow-hidden group">
-                    <p className="text-[10px] font-black text-[#8A7968] uppercase tracking-wider mb-0.5">
-                        Wards Assigned
+                <div className="bg-background border border-textMuted/20 p-4 rounded-xl min-w-[160px] text-center shadow-inner relative overflow-hidden group">
+                    <p className="text-[10px] font-black text-textMuted uppercase tracking-wider mb-0.5">
+                        Assigned Wards
                     </p>
-                    <p className="text-2xl font-black text-[#291C14] tracking-tight">
+                    <p className="text-2xl font-black text-textMain tracking-tight">
                         {jurisdictionWards.filter(w => getWardSupervisor(w.name)).length}
-                        <span className="text-xs font-bold text-[#8A7968] mx-1">/</span>
-                        <span className="text-base text-[#8A7968]">{jurisdictionWards.length || '--'}</span>
+                        <span className="text-xs font-bold text-textMuted mx-1">/</span>
+                        <span className="text-base text-textMuted">{jurisdictionWards.length || '--'}</span>
                     </p>
                 </div>
             </header>
@@ -286,22 +323,22 @@ export default function LgaSupervisorManageWardsPage() {
             <main className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-5 gap-8">
 
                 {/* Left Section: List of Wards */}
-                <div className="lg:col-span-3 bg-white p-6 rounded-2xl border-2 border-[#8A7968]/20 flex flex-col h-[75vh]">
-                    <div className="mb-6 border-b-2 border-[#FAF6F0] pb-4">
-                        <h3 className="text-base font-black tracking-tight text-[#291C14] uppercase">
-                            Ward Jurisdiction Coverage
+                <div className="lg:col-span-3 bg-card p-6 rounded-2xl border border-textMuted/20 flex flex-col h-[75vh]">
+                    <div className="mb-6 border-b border-background pb-4">
+                        <h3 className="text-base font-black tracking-tight text-textMain uppercase">
+                            Ward Jurisdiction Allocation
                         </h3>
-                        <p className="text-xs font-medium text-[#8A7968] mt-0.5">
-                            Real-time assignment mapping of wards across your designated Local Government Areas.
+                        <p className="text-xs font-medium text-textMuted mt-0.5">
+                            Monitor and assign supervisor coverage across your local government jurisdictions.
                         </p>
                     </div>
 
                     <div className="space-y-3 flex-1 overflow-y-auto pr-2 custom-scrollbar">
                         {jurisdictionWards.length === 0 ? (
-                            <div className="flex flex-col items-center justify-center text-center py-16 px-4 bg-[#FAF6F0]/50 border-2 border-dashed border-[#8A7968]/20 rounded-xl">
-                                <span className="text-3xl opacity-40">🗺️</span>
-                                <p className="text-xs font-black uppercase tracking-widest text-[#8A7968] mt-3">
-                                    No operational wards resolved.
+                            <div className="flex flex-col items-center justify-center text-center py-16 px-4 bg-background/50 border border-dashed border-textMuted/20 rounded-xl">
+                                <MapPin className="w-8 h-8 text-textMuted/40 mb-2" />
+                                <p className="text-xs font-black uppercase tracking-widest text-textMuted mt-3">
+                                    No operational wards found.
                                 </p>
                             </div>
                         ) : (
@@ -312,34 +349,34 @@ export default function LgaSupervisorManageWardsPage() {
                                 return (
                                     <div
                                         key={ward.id || idx}
-                                        className={`p-4 rounded-xl border-2 transition-all duration-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4 group ${isAssigned
-                                            ? 'bg-white border-[#8A7968]/20 hover:border-[#9A6749]/40 shadow-sm'
-                                            : 'border-dashed border-[#9A6949]/30 bg-[#9A6749]/5 hover:bg-[#9A6749]/10'
+                                        className={`p-4 rounded-xl border transition-all duration-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4 group ${isAssigned
+                                            ? 'bg-card border-textMuted/20 hover:border-primary/40 shadow-sm'
+                                            : 'border-dashed border-primary/30 bg-primary/5 hover:bg-primary/10'
                                             }`}
                                     >
                                         <div className="flex items-start gap-3">
                                             <div className={`mt-0.5 px-2 py-1 rounded text-[10px] font-black font-mono border ${isAssigned
-                                                ? 'bg-[#16a34a]/10 text-[#16a34a] border-[#16a34a]/20'
-                                                : 'bg-[#9A6749]/10 text-[#9A6749] border-[#9A6749]/20'
+                                                ? 'bg-accent/10 text-accent border-accent/20'
+                                                : 'bg-primary/10 text-primary border-primary/20'
                                                 }`}>
                                                 {String(idx + 1).padStart(2, '0')}
                                             </div>
                                             <div className="space-y-1">
-                                                <span className="text-sm font-black uppercase text-[#291C14] tracking-tight block">
+                                                <span className="text-sm font-black uppercase text-textMain tracking-tight block">
                                                     {ward.name}
                                                 </span>
                                                 {isAssigned ? (
-                                                    <div className="space-y-0.5 bg-[#FAF6F0] p-2 rounded-lg border border-[#8A7968]/10 min-w-[200px]">
-                                                        <span className="text-xs font-bold text-[#291C14] uppercase block">
-                                                            👤 {supervisor.name}
+                                                    <div className="space-y-1 bg-background p-2 rounded-lg border border-textMuted/10 min-w-[200px]">
+                                                        <span className="inline-flex items-center text-xs font-bold text-textMain uppercase gap-1.5">
+                                                            <User className="w-3 h-3 text-primary" /> {supervisor.name}
                                                         </span>
-                                                        <span className="text-[10px] font-semibold text-[#8A7968] font-mono block tracking-wide">
-                                                            ✉️ {supervisor.email}
+                                                        <span className="inline-flex items-center text-[10px] font-semibold text-textMuted font-mono gap-1.5 block tracking-wide">
+                                                            <Mail className="w-3 h-3 text-textMuted" /> {supervisor.email}
                                                         </span>
                                                     </div>
                                                 ) : (
-                                                    <span className="text-[10px] font-bold text-[#8A7968] uppercase tracking-wider flex items-center gap-1 italic">
-                                                        ⚠️ Unassigned Ward
+                                                    <span className="text-[10px] font-bold text-textMuted uppercase tracking-wider flex items-center gap-1.5 italic">
+                                                        <AlertTriangle className="w-3 h-3 text-gold" /> Unassigned Ward
                                                     </span>
                                                 )}
                                             </div>
@@ -347,14 +384,14 @@ export default function LgaSupervisorManageWardsPage() {
 
                                         <div className="flex items-center gap-2 self-end sm:self-center">
                                             {isAssigned ? (
-                                                <span className="bg-[#16a34a]/10 text-[#16a34a] border border-[#16a34a]/20 text-[10px] font-extrabold uppercase px-3 py-1.5 rounded-lg tracking-widest">
-                                                    ASSIGNED
+                                                <span className="inline-flex items-center gap-1 bg-accent/10 text-accent border border-accent/20 text-[10px] font-extrabold uppercase px-3 py-1.5 rounded-lg tracking-widest">
+                                                    <CheckCircle2 className="w-3 h-3" /> Assigned
                                                 </span>
                                             ) : (
                                                 <button
                                                     type="button"
                                                     onClick={() => initiateAssignment(ward.name)}
-                                                    className="bg-[#9A6749] hover:bg-[#291C14] text-white text-[11px] font-black uppercase tracking-widest px-4 py-2.5 rounded-xl shadow-md transition-all border-2 border-transparent hover:scale-[1.02] active:scale-[0.98]"
+                                                    className="bg-primary hover:bg-primary-dark text-white text-[11px] font-black uppercase tracking-widest px-4 py-2.5 rounded-xl shadow-md transition-all border border-transparent hover:scale-[1.02] active:scale-[0.98]"
                                                 >
                                                     Assign Supervisor
                                                 </button>
@@ -370,14 +407,14 @@ export default function LgaSupervisorManageWardsPage() {
                 {/* Right Section: Form View Configuration */}
                 <div className="lg:col-span-2">
                     {isAssigningMode ? (
-                        <div className="bg-white p-6 rounded-2xl border-2 border-[#9A6749] h-fit transition-all shadow-lg animate-fadeIn">
-                            <div className="mb-6 border-b-2 border-[#FAF6F0] pb-4 flex justify-between items-center">
+                        <div className="bg-card p-6 rounded-2xl border-2 border-primary h-fit transition-all shadow-lg animate-fadeIn">
+                            <div className="mb-6 border-b border-background pb-4 flex justify-between items-center">
                                 <div>
-                                    <h3 className="text-base font-black tracking-tight text-[#291C14] uppercase">
+                                    <h3 className="text-base font-black tracking-tight text-textMain uppercase">
                                         Assign Ward Supervisor
                                     </h3>
-                                    <p className="text-[10px] font-bold text-[#8A7968] uppercase mt-0.5">
-                                        Target Ward: <span className="text-[#9A6749] underline decoration-2 decoration-[#9A6749] font-black tracking-wide">{selectedTargetWard}</span>
+                                    <p className="text-[10px] font-bold text-textMuted uppercase mt-0.5">
+                                        Target Ward: <span className="text-primary underline decoration-2 decoration-primary font-black tracking-wide">{selectedTargetWard}</span>
                                     </p>
                                 </div>
                                 <button
@@ -387,23 +424,23 @@ export default function LgaSupervisorManageWardsPage() {
                                         setUseExistingSupervisor(false);
                                         setSelectedExistingEmail('');
                                     }}
-                                    className="text-[10px] font-black text-[#8A7968] uppercase hover:text-[#291C14] bg-[#FAF6F0] px-3 py-1.5 rounded-lg border border-[#8A7968]/20 tracking-wider transition-colors"
+                                    className="inline-flex items-center gap-1 text-[10px] font-black text-textMuted uppercase hover:text-textMain bg-background px-3 py-1.5 rounded-lg border border-textMuted/20 tracking-wider transition-colors"
                                 >
-                                    Cancel
+                                    <X className="w-3 h-3" /> Cancel
                                 </button>
                             </div>
 
                             {statusMessage.text && (
-                                <div className={`p-4 mb-5 rounded-xl border-2 text-[11px] font-bold uppercase tracking-wide leading-relaxed ${statusMessage.type === 'success'
-                                    ? 'bg-green-50 border-green-500/30 text-green-700'
-                                    : 'bg-red-50 border-red-500/30 text-red-700'
+                                <div className={`p-4 mb-5 rounded-xl border text-[11px] font-bold uppercase tracking-wide leading-relaxed ${statusMessage.type === 'success'
+                                    ? 'bg-accent/10 border-accent/30 text-accent'
+                                    : 'bg-gold/10 border-gold/30 text-gold'
                                     }`}>
                                     {statusMessage.text}
                                 </div>
                             )}
 
                             {getUniqueSupervisorsList().length > 0 && (
-                                <div className="mb-5 bg-[#FAF6F0] p-3 rounded-xl border-2 border-[#8A7968]/10 space-y-2">
+                                <div className="mb-5 bg-background p-3 rounded-xl border border-textMuted/10 space-y-2">
                                     <label className="flex items-center gap-2.5 cursor-pointer select-none">
                                         <input
                                             type="checkbox"
@@ -412,9 +449,9 @@ export default function LgaSupervisorManageWardsPage() {
                                                 setUseExistingSupervisor(e.target.checked);
                                                 setSelectedExistingEmail('');
                                             }}
-                                            className="w-4 h-4 accent-[#9A6749] cursor-pointer rounded"
+                                            className="w-4 h-4 accent-primary cursor-pointer rounded"
                                         />
-                                        <span className="text-xs font-black uppercase text-[#291C14] tracking-tight">
+                                        <span className="text-xs font-black uppercase text-textMain tracking-tight">
                                             Link Existing Supervisor
                                         </span>
                                     </label>
@@ -424,9 +461,9 @@ export default function LgaSupervisorManageWardsPage() {
                                             <select
                                                 value={selectedExistingEmail}
                                                 onChange={(e) => setSelectedExistingEmail(e.target.value)}
-                                                className="block w-full rounded-xl border-2 border-[#8A7968]/20 bg-white px-3 py-2.5 text-xs font-bold text-[#291C14] focus:border-[#9A6749] focus:outline-none cursor-pointer tracking-wide uppercase"
+                                                className="block w-full rounded-xl border border-textMuted/20 bg-card px-3 py-2.5 text-xs font-bold text-textMain focus:border-primary focus:outline-none cursor-pointer tracking-wide uppercase"
                                             >
-                                                <option value="">-- SELECT FROM LIST --</option>
+                                                <option value="">-- Select Supervisor --</option>
                                                 {getUniqueSupervisorsList().map((sup, sIdx) => (
                                                     <option key={sIdx} value={sup.email}>
                                                         {sup.name.toUpperCase()} [{sup.email.toLowerCase()}]
@@ -440,64 +477,96 @@ export default function LgaSupervisorManageWardsPage() {
 
                             <form onSubmit={handleCreateWardSupervisor} className="space-y-4">
                                 <div className="space-y-1.5">
-                                    <label className="block text-[10px] font-black uppercase tracking-wider text-[#8A7968]">Supervisor Full Name</label>
-                                    <input
-                                        type="text"
-                                        required
-                                        disabled={useExistingSupervisor}
-                                        value={fullName}
-                                        onChange={e => setFullName(e.target.value)}
-                                        placeholder="Enter complete official name"
-                                        className="block w-full rounded-xl border-2 border-[#8A7968]/20 bg-[#FAF6F0] disabled:opacity-60 disabled:cursor-not-allowed px-4 py-3 text-xs font-bold text-[#291C14] focus:border-[#9A6749] focus:outline-none transition-colors tracking-wide uppercase"
-                                    />
+                                    <label className="block text-[10px] font-black uppercase tracking-wider text-textMuted">Supervisor Full Name</label>
+                                    <div className="relative">
+                                        <User className="absolute left-3 top-3.5 w-4 h-4 text-textMuted" />
+                                        <input
+                                            type="text"
+                                            required
+                                            disabled={useExistingSupervisor || isGeneratingEmail}
+                                            value={fullName}
+                                            onChange={e => setFullName(e.target.value)}
+                                            placeholder="Enter full official name"
+                                            className="block w-full rounded-xl border border-textMuted/20 bg-background disabled:opacity-60 disabled:cursor-not-allowed pl-9 pr-4 py-3 text-xs font-bold text-textMain focus:border-primary focus:outline-none transition-colors tracking-wide uppercase"
+                                        />
+                                    </div>
                                 </div>
 
                                 <div className="space-y-1.5">
-                                    <label className="block text-[10px] font-black uppercase tracking-wider text-[#8A7968]">Email Address</label>
-                                    <input
-                                        type="email"
-                                        required
-                                        disabled={useExistingSupervisor}
-                                        value={email}
-                                        onChange={e => setEmail(e.target.value)}
-                                        placeholder="supervisor@campaign.ng"
-                                        className="block w-full rounded-xl border-2 border-[#8A7968]/20 bg-[#FAF6F0] disabled:opacity-60 disabled:cursor-not-allowed px-4 py-3 text-xs font-bold text-[#291C14] focus:border-[#9A6749] focus:outline-none transition-colors tracking-wide lowercase"
-                                    />
+                                    <label className="block text-[10px] font-black uppercase tracking-wider text-textMuted">Email Address</label>
+                                    <div className="relative flex items-center">
+                                        <Mail className="absolute left-3 top-3.5 w-4 h-4 text-textMuted" />
+                                        <input
+                                            type="email"
+                                            required
+                                            disabled={useExistingSupervisor || isGeneratingEmail}
+                                            value={email}
+                                            onChange={e => setEmail(e.target.value)}
+                                            placeholder="supervisor@campaign.ng"
+                                            className="block w-full rounded-xl border border-textMuted/20 bg-background disabled:opacity-60 disabled:cursor-not-allowed pl-9 pr-12 py-3 text-xs font-bold text-textMain focus:border-primary focus:outline-none transition-colors tracking-wide lowercase"
+                                        />
+                                        {!useExistingSupervisor && (
+                                            <button
+                                                type="button"
+                                                onClick={generateDummyEmail}
+                                                disabled={isGeneratingEmail || !selectedTargetWard}
+                                                title="Generate safe dynamic email"
+                                                className="absolute right-2 p-1.5 rounded-lg bg-card border border-textMuted/20 hover:bg-primary/10 text-primary transition-colors disabled:opacity-50"
+                                            >
+                                                {isGeneratingEmail ? (
+                                                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                                ) : (
+                                                    <Wand2 className="w-3.5 h-3.5" />
+                                                )}
+                                            </button>
+                                        )}
+                                    </div>
                                 </div>
 
                                 {!useExistingSupervisor && (
                                     <div className="space-y-1.5">
-                                        <label className="block text-[10px] font-black uppercase tracking-wider text-[#8A7968]">Temporary Password</label>
-                                        <input
-                                            type="password"
-                                            required
-                                            value={password}
-                                            onChange={e => setPassword(e.target.value)}
-                                            placeholder="••••••••"
-                                            className="block w-full rounded-xl border-2 border-[#8A7968]/20 bg-[#FAF6F0] px-4 py-3 text-xs font-bold text-[#291C14] focus:border-[#9A6749] focus:outline-none transition-colors"
-                                        />
+                                        <label className="block text-[10px] font-black uppercase tracking-wider text-textMuted">Temporary Password</label>
+                                        <div className="relative">
+                                            <Lock className="absolute left-3 top-3.5 w-4 h-4 text-textMuted" />
+                                            <input
+                                                type="password"
+                                                required
+                                                disabled={isGeneratingEmail}
+                                                value={password}
+                                                onChange={e => setPassword(e.target.value)}
+                                                placeholder="••••••••"
+                                                className="block w-full rounded-xl border border-textMuted/20 bg-background pl-9 pr-4 py-3 text-xs font-bold text-textMain focus:border-primary focus:outline-none transition-colors"
+                                            />
+                                        </div>
                                     </div>
                                 )}
 
                                 <button
                                     type="submit"
-                                    className="w-full bg-[#9A6749] hover:bg-[#291C14] text-white text-xs font-black uppercase tracking-widest py-4 rounded-xl transition-all shadow-md border-2 border-transparent hover:scale-[1.01] active:scale-[0.99] pt-4"
+                                    disabled={isPending || isGeneratingEmail}
+                                    className="w-full bg-primary hover:bg-primary-dark text-white text-xs font-black uppercase tracking-widest py-4 rounded-xl transition-all shadow-md border border-transparent hover:scale-[1.01] active:scale-[0.99] disabled:opacity-50"
                                 >
-                                    {useExistingSupervisor ? 'Link Existing Supervisor' : `Register Ward Supervisor`}
+                                    {isPending ? (
+                                        <Loader2 className="w-4 h-4 animate-spin" />
+                                    ) : useExistingSupervisor ? (
+                                        'Link Existing Supervisor'
+                                    ) : (
+                                        'Register Ward Supervisor'
+                                    )}
                                 </button>
                             </form>
                         </div>
                     ) : (
-                        <div className="bg-[#FAF6F0]/40 p-8 rounded-2xl border-2 border-dashed border-[#8A7968]/20 text-center py-16 flex flex-col items-center justify-center space-y-3 h-fit">
-                            <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center border-2 border-[#8A7968]/10 text-xl shadow-sm">
-                                📋
+                        <div className="bg-background/40 p-8 rounded-2xl border border-dashed border-textMuted/20 text-center py-16 flex flex-col items-center justify-center space-y-3 h-fit">
+                            <div className="w-12 h-12 bg-card rounded-full flex items-center justify-center border border-textMuted/10 shadow-sm">
+                                <ClipboardList className="w-5 h-5 text-textMuted" />
                             </div>
                             <div className="space-y-1">
-                                <h4 className="text-xs font-black text-[#291C14] uppercase tracking-widest">
+                                <h4 className="text-xs font-black text-textMain uppercase tracking-widest">
                                     Awaiting Ward Selection
                                 </h4>
-                                <p className="text-[11px] text-[#8A7968] font-medium max-w-xs mx-auto leading-relaxed">
-                                    Select an unassigned ward parameter from the tracking list layout index to activate the supervisor setup form interface.
+                                <p className="text-[11px] text-textMuted font-medium max-w-xs mx-auto leading-relaxed">
+                                    Select an unassigned ward from the management directory list to open the supervisor assignment panel.
                                 </p>
                             </div>
                         </div>

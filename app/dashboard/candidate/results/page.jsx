@@ -2,7 +2,8 @@
 
 import React, { useState, useEffect, useTransition, useRef } from 'react';
 import { createBrowserClient } from '@supabase/ssr';
-import LoadingOverlay from '../../../../components/LoadingOverlay';
+import { AlertCircle, Check, ChevronDown, Eye, X, Lock, Loader2 } from 'lucide-react';
+import LoadingOverlay from '../../../../components/LoadingOverlay'; // Assumed path based on previous components
 
 export default function ElectoralResultsPage() {
   const [isLoading, setIsLoading] = useState(true);
@@ -346,68 +347,66 @@ export default function ElectoralResultsPage() {
     : 0;
 
   return (
-    <main className="p-4 md:p-8 max-w-5xl mx-auto space-y-8 text-slate-800">
+    <main className="p-3 max-w-5xl mx-auto space-y-6 sm:space-y-8 text-textMain bg-background min-h-screen overflow-x-hidden w-full">
       {isPending && <LoadingOverlay message="Updating election results..." />}
 
       {/* Top Operational Location Tracker */}
-      <div className="border-b border-slate-200 pb-6 flex flex-col md:flex-row md:items-start md:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900">Live Election Results</h1>
-          <p className="text-sm font-medium text-slate-500 mt-1">
+      <div className="border-b border-textMuted/20 pb-4 sm:pb-6 flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+        <div className="min-w-0">
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-textMain break-words">Live Election Results</h1>
+          <p className="text-xs sm:text-sm font-medium text-textMuted mt-1">
             Real-time vote tallies and reporting progress directly from field agents.
           </p>
         </div>
-        <div className="bg-white border border-slate-200 px-4 py-3 rounded-xl shadow-sm text-left md:text-right">
-          <span className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Administrative Jurisdiction</span>
-          <span className="text-sm font-bold text-slate-800 tracking-wide">
+        <div className="bg-card border border-textMuted/20 px-3 py-2.5 sm:px-4 sm:py-3 rounded-xl shadow-sm text-left md:text-right shrink-0">
+          <span className="block text-[10px] sm:text-xs font-semibold text-textMuted uppercase tracking-wider mb-1">Administrative Jurisdiction</span>
+          <span className="text-xs sm:text-sm font-bold text-textMain tracking-wide break-words block max-w-full">
             {userScope.role ? userScope.role.replace(/_/g, ' ').toUpperCase() : 'CENTRAL HEADQUARTERS'} ({userScope.state || 'All States'})
-            {userScope.lga && ` - ${userScope.lga} Local Government Area`}
+            {userScope.lga && ` - ${userScope.lga} Local Government`}
             {userScope.stateConstituency && ` [${userScope.stateConstituency}]`}
           </span>
         </div>
       </div>
 
       {error && (
-        <div className="p-4 bg-red-50 border border-red-200 text-red-700 text-sm font-semibold rounded-xl flex items-center space-x-2">
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-          <span>{error}</span>
+        <div className="p-3 sm:p-4 bg-red-50 border border-red-200 text-red-700 text-xs sm:text-sm font-semibold rounded-xl flex items-center space-x-2">
+          <AlertCircle className="w-5 h-5 shrink-0" />
+          <span className="break-words">{error}</span>
         </div>
       )}
 
       {/* CUMULATIVE LIVE TOTALS SECTION */}
-      <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-5">
+      <div className="bg-card border border-textMuted/20 rounded-2xl p-4 sm:p-6 shadow-sm space-y-4 sm:space-y-5">
         <div>
-          <h2 className="text-lg font-bold text-slate-900">Cumulative Vote Tallies</h2>
-          <p className="text-sm text-slate-500 mt-1">Total aggregated votes compiled from all verified polling unit submissions.</p>
+          <h2 className="text-base sm:text-lg font-bold text-textMain">Cumulative Vote Tallies</h2>
+          <p className="text-xs sm:text-sm text-textMuted mt-1">Total aggregated votes compiled from all verified polling unit submissions.</p>
         </div>
 
         {Object.keys(cumulativeTotals).length === 0 ? (
-          <div className="bg-slate-50 border border-dashed border-slate-300 rounded-xl p-8 text-center">
-            <p className="text-sm font-medium text-slate-500">
+          <div className="bg-background border border-dashed border-textMuted/30 rounded-xl p-6 sm:p-8 text-center">
+            <p className="text-xs sm:text-sm font-medium text-textMuted">
               Awaiting field updates... No election results have been submitted by agents yet.
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4">
             {Object.entries(cumulativeTotals).map(([party, total]) => {
               const isHighest = Number(total) === maxCumulativeVotes && maxCumulativeVotes > 0;
               return (
                 <div
                   key={party}
-                  className={`border rounded-xl p-5 flex flex-col justify-between relative overflow-hidden transition-all ${isHighest ? 'bg-green-50 border-green-500 shadow-md ring-1 ring-green-500/20' : 'bg-slate-50 border-slate-200'
+                  className={`border rounded-xl p-3 sm:p-5 flex flex-col justify-between relative overflow-hidden transition-all ${isHighest ? 'bg-accent/10 border-accent shadow-md ring-1 ring-accent/20' : 'bg-background border-textMuted/20'
                     }`}
                 >
                   {isHighest && (
-                    <div className="absolute top-3 right-3 bg-green-100 p-1 rounded-full text-green-600" title="Currently Leading">
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
-                      </svg>
+                    <div className="absolute top-2 right-2 sm:top-3 sm:right-3 bg-accent/20 p-1 rounded-full text-accent" title="Currently Leading">
+                      <Check className="w-3 h-3 sm:w-4 sm:h-4" />
                     </div>
                   )}
-                  <span className={`text-sm font-bold tracking-wide ${isHighest ? 'text-green-800' : 'text-slate-500'}`}>
+                  <span className={`text-xs sm:text-sm font-bold tracking-wide truncate pr-6 ${isHighest ? 'text-accent' : 'text-textMuted'}`}>
                     {party}
                   </span>
-                  <span className={`text-3xl font-black mt-2 tracking-tight ${isHighest ? 'text-green-700' : 'text-slate-900'}`}>
+                  <span className={`text-2xl sm:text-3xl font-black mt-1.5 sm:mt-2 tracking-tight ${isHighest ? 'text-accent' : 'text-textMain'}`}>
                     {total.toLocaleString()}
                   </span>
                 </div>
@@ -418,48 +417,48 @@ export default function ElectoralResultsPage() {
       </div>
 
       {/* Core Territorial Tree Hierarchy Container */}
-      <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-6">
+      <div className="bg-card border border-textMuted/20 rounded-2xl p-4 sm:p-6 shadow-sm space-y-5 sm:space-y-6">
         <div>
-          <h3 className="text-lg font-bold text-slate-900">Regional Breakdown</h3>
-          <p className="text-sm text-slate-500 mt-1">Track regional reporting status. Expand areas down to specific polling units to review source documents.</p>
+          <h3 className="text-base sm:text-lg font-bold text-textMain">Regional Breakdown</h3>
+          <p className="text-xs sm:text-sm text-textMuted mt-1">Track regional reporting status. Expand areas down to specific polling units to review source documents.</p>
         </div>
 
         {/* Level 0: State Anchor Node */}
-        <div className="bg-slate-50 p-5 rounded-xl border border-slate-200 space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div className="bg-background p-4 sm:p-5 rounded-xl border border-textMuted/20 space-y-3 sm:space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="flex items-center space-x-3">
-              <div className="w-3 h-3 rounded-full bg-[#9A6749] animate-pulse" />
-              <div>
-                <span className="block text-xs font-semibold text-slate-500 uppercase tracking-wider">State Level</span>
-                <h2 className="text-lg font-bold text-slate-900">{userScope.state || 'N/A'} State</h2>
+              <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-primary animate-pulse shrink-0" />
+              <div className="min-w-0">
+                <span className="block text-[10px] sm:text-xs font-semibold text-textMuted uppercase tracking-wider">State Level</span>
+                <h2 className="text-base sm:text-lg font-bold text-textMain truncate">{userScope.state || 'N/A'} State</h2>
               </div>
             </div>
-            <div className="text-left sm:text-right">
-              <span className="text-xs font-semibold block text-slate-500 uppercase tracking-wider mb-1">
+            <div className="text-left sm:text-right shrink-0">
+              <span className="text-[10px] sm:text-xs font-semibold block text-textMuted uppercase tracking-wider mb-0.5 sm:mb-1">
                 Total Polling Units Reported
               </span>
-              <span className="text-sm font-bold text-slate-900">
+              <span className="text-xs sm:text-sm font-bold text-textMain">
                 {totalStateReportedPus} of {totalStateExpectedPus} ({stateIngestionRatio.toFixed(1)}%)
               </span>
             </div>
           </div>
 
           {/* State Reporting Progress Bar */}
-          <div className="w-full bg-slate-200 h-2.5 rounded-full overflow-hidden">
+          <div className="w-full bg-textMuted/10 h-2 sm:h-2.5 rounded-full overflow-hidden">
             <div
-              className="bg-[#9A6749] h-full rounded-full transition-all duration-500"
+              className="bg-primary h-full rounded-full transition-all duration-500"
               style={{ width: `${Math.min(stateIngestionRatio, 100)}%` }}
             />
           </div>
         </div>
 
         {/* Dynamic Level 1 Branch Selection: Swaps between LGA map items and direct Ward layouts */}
-        <div className="space-y-4 pl-2 md:pl-4 border-l-2 border-slate-100">
+        <div className="space-y-3 sm:space-y-4 pl-1 sm:pl-2 md:pl-4 border-l-2 border-textMuted/10">
 
           {!isSubLgaContext ? (
             /* STANDARD LGA TREE RENDER BLOCK */
             targetedLgas.length === 0 ? (
-              <p className="text-sm text-slate-500 font-medium pl-2">No Local Government Areas found for this view.</p>
+              <p className="text-xs sm:text-sm text-textMuted font-medium pl-2">No Local Government Areas found for this view.</p>
             ) : (
               targetedLgas.map(lga => {
                 const isLgaOpen = !!expandedLgas[lga.name];
@@ -479,32 +478,32 @@ export default function ElectoralResultsPage() {
                 const lgaIngestionRatio = totalLgaExpectedPus > 0 ? (totalLgaReportedPus / totalLgaExpectedPus) * 100 : 0;
 
                 return (
-                  <div key={lga.name} className="border border-slate-200 rounded-xl overflow-hidden bg-white">
+                  <div key={lga.name} className="border border-textMuted/20 rounded-xl overflow-hidden bg-card">
                     {lga.name && (
                       <div
                         onClick={() => toggleLga(lga.name)}
-                        className="flex flex-col sm:flex-row sm:items-center justify-between p-4 hover:bg-slate-50 cursor-pointer transition-all select-none gap-4"
+                        className="flex flex-col sm:flex-row sm:items-center justify-between p-3 sm:p-4 hover:bg-background cursor-pointer transition-all select-none gap-3 sm:gap-4"
                       >
-                        <div className="flex items-center space-x-3">
-                          <div className={`p-1.5 rounded-md ${isLgaOpen ? 'bg-slate-200 text-slate-700' : 'bg-slate-100 text-slate-500'}`}>
-                            <svg className={`w-4 h-4 transition-transform ${isLgaOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
+                        <div className="flex items-center space-x-3 min-w-0">
+                          <div className={`p-1.5 rounded-md shrink-0 ${isLgaOpen ? 'bg-textMuted/20 text-textMain' : 'bg-textMuted/10 text-textMuted'}`}>
+                            <ChevronDown className={`w-3 h-3 sm:w-4 sm:h-4 transition-transform ${isLgaOpen ? 'rotate-180' : ''}`} />
                           </div>
-                          <div>
-                            <h4 className="text-base font-bold text-slate-800">{lga.name} Local Government Area</h4>
-                            <span className="text-xs text-slate-500 font-medium mt-0.5 block">
+                          <div className="min-w-0">
+                            <h4 className="text-sm sm:text-base font-bold text-textMain truncate">{lga.name} Local Government Area</h4>
+                            <span className="text-[10px] sm:text-xs text-textMuted font-medium mt-0.5 block">
                               {lga.wardCount || lga.ward_count || 0} Wards
                             </span>
                           </div>
                         </div>
 
-                        <div className="flex flex-col w-full sm:w-64 space-y-2 sm:text-right">
-                          <div className="flex justify-between text-xs font-semibold text-slate-600">
+                        <div className="flex flex-col w-full sm:w-56 md:w-64 space-y-1.5 sm:space-y-2 shrink-0 sm:text-right ml-9 sm:ml-0">
+                          <div className="flex justify-between text-[10px] sm:text-xs font-semibold text-textMuted">
                             <span>Reporting Progress:</span>
-                            <span className="text-slate-900">{totalLgaReportedPus} / {totalLgaExpectedPus} ({lgaIngestionRatio.toFixed(0)}%)</span>
+                            <span className="text-textMain">{totalLgaReportedPus} / {totalLgaExpectedPus} ({lgaIngestionRatio.toFixed(0)}%)</span>
                           </div>
-                          <div className="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
+                          <div className="w-full bg-textMuted/10 h-1.5 sm:h-2 rounded-full overflow-hidden">
                             <div
-                              className="bg-[#9A6749] h-full rounded-full transition-all duration-300"
+                              className="bg-primary h-full rounded-full transition-all duration-300"
                               style={{ width: `${Math.min(lgaIngestionRatio, 100)}%` }}
                             />
                           </div>
@@ -513,10 +512,10 @@ export default function ElectoralResultsPage() {
                     )}
 
                     {isLgaOpen && (
-                      <div className="p-4 bg-slate-50 space-y-3 border-t border-slate-200">
+                      <div className="p-3 sm:p-4 bg-background space-y-3 border-t border-textMuted/20">
                         {structuralWards.length === 0 ? (
-                          <div className="flex items-center space-x-2 text-sm text-slate-500 py-2 pl-2">
-                            <div className="w-4 h-4 border-2 border-slate-300 border-t-slate-600 rounded-full animate-spin" />
+                          <div className="flex items-center space-x-2 text-xs sm:text-sm text-textMuted py-2 pl-2">
+                            <Loader2 className="w-4 h-4 animate-spin text-primary" />
                             <span>Loading wards...</span>
                           </div>
                         ) : (
@@ -534,41 +533,41 @@ export default function ElectoralResultsPage() {
                             const wardIngestionRatio = totalWardExpectedPus > 0 ? (totalWardReportedPus / totalWardExpectedPus) * 100 : 0;
 
                             return (
-                              <div key={ward.name} className="border border-slate-200 rounded-lg bg-white overflow-hidden shadow-sm">
+                              <div key={ward.name} className="border border-textMuted/20 rounded-lg bg-card overflow-hidden shadow-sm">
                                 <div
                                   onClick={() => toggleWard(lga.name, ward.name)}
-                                  className="flex flex-col sm:flex-row sm:items-center justify-between p-3 hover:bg-slate-50 cursor-pointer transition-all select-none gap-3"
+                                  className="flex flex-col sm:flex-row sm:items-center justify-between p-2.5 sm:p-3 hover:bg-background cursor-pointer transition-all select-none gap-2 sm:gap-3"
                                 >
-                                  <div className="flex items-center space-x-3">
-                                    <div className={`p-1 rounded text-slate-400 ${isWardOpen ? 'bg-slate-100' : ''}`}>
-                                      <svg className={`w-3.5 h-3.5 transition-transform ${isWardOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
+                                  <div className="flex items-center space-x-2.5 sm:space-x-3 min-w-0">
+                                    <div className={`p-1 rounded shrink-0 text-textMuted/70 ${isWardOpen ? 'bg-textMuted/10' : ''}`}>
+                                      <ChevronDown className={`w-3 h-3 sm:w-3.5 sm:h-3.5 transition-transform ${isWardOpen ? 'rotate-180' : ''}`} />
                                     </div>
-                                    <div>
-                                      <h5 className="text-sm font-bold text-slate-800">{ward.name} Ward</h5>
-                                      <span className="text-xs text-slate-500 font-medium block">
+                                    <div className="min-w-0">
+                                      <h5 className="text-xs sm:text-sm font-bold text-textMain truncate">{ward.name} Ward</h5>
+                                      <span className="text-[10px] sm:text-xs text-textMuted font-medium block">
                                         {totalWardExpectedPus} Polling Units
                                       </span>
                                     </div>
                                   </div>
 
-                                  <div className="flex items-center space-x-3 w-full sm:w-48">
-                                    <div className="w-full bg-slate-200 h-1.5 rounded-full overflow-hidden">
+                                  <div className="flex items-center space-x-2 sm:space-x-3 w-full sm:w-40 md:w-48 ml-7 sm:ml-0">
+                                    <div className="w-full bg-textMuted/10 h-1.5 rounded-full overflow-hidden">
                                       <div
-                                        className="bg-[#9A6749] h-full rounded-full"
+                                        className="bg-primary h-full rounded-full"
                                         style={{ width: `${Math.min(wardIngestionRatio, 100)}%` }}
                                       />
                                     </div>
-                                    <span className="text-xs font-semibold whitespace-nowrap text-slate-700">
+                                    <span className="text-[10px] sm:text-xs font-semibold whitespace-nowrap text-textMain shrink-0">
                                       {totalWardReportedPus} / {totalWardExpectedPus}
                                     </span>
                                   </div>
                                 </div>
 
                                 {isWardOpen && (
-                                  <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-4 bg-slate-50 border-t border-slate-200">
+                                  <div className="p-3 sm:p-4 grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 bg-background border-t border-textMuted/20">
                                     {localizedPus.length === 0 ? (
-                                      <div className="flex items-center space-x-2 text-sm text-slate-500 col-span-2 py-2">
-                                        <div className="w-4 h-4 border-2 border-slate-300 border-t-slate-600 rounded-full animate-spin" />
+                                      <div className="flex items-center space-x-2 text-xs sm:text-sm text-textMuted col-span-1 md:col-span-2 py-2">
+                                        <Loader2 className="w-4 h-4 animate-spin text-primary" />
                                         <span>Loading polling units...</span>
                                       </div>
                                     ) : (
@@ -586,38 +585,38 @@ export default function ElectoralResultsPage() {
                                         return (
                                           <div
                                             key={pu.id || puCode || pu.name}
-                                            className={`p-4 border rounded-xl flex flex-col justify-between space-y-4 transition-all ${hasData
-                                              ? 'bg-white border-slate-300 shadow-sm'
-                                              : 'bg-white border-dashed border-slate-200 opacity-75'
+                                            className={`p-3 sm:p-4 border rounded-xl flex flex-col justify-between space-y-3 sm:space-y-4 transition-all min-w-0 ${hasData
+                                              ? 'bg-card border-textMuted/30 shadow-sm'
+                                              : 'bg-card border-dashed border-textMuted/20 opacity-75'
                                               }`}
                                           >
-                                            <div className="flex justify-between items-start gap-3">
-                                              <div>
-                                                <span className="block text-xs font-bold text-slate-400 mb-1">
+                                            <div className="flex justify-between items-start gap-2 sm:gap-3">
+                                              <div className="min-w-0 flex-1">
+                                                <span className="block text-[10px] sm:text-xs font-bold text-textMuted/70 mb-0.5 sm:mb-1 truncate">
                                                   Code: {puCode || 'N/A'}
                                                 </span>
-                                                <h6 className="text-sm font-semibold text-slate-800 leading-snug">
+                                                <h6 className="text-xs sm:text-sm font-semibold text-textMain leading-snug break-words">
                                                   {pu.name}
                                                 </h6>
                                               </div>
-                                              <span className={`text-xs font-semibold px-2.5 py-1 rounded-md whitespace-nowrap ${hasData ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-500'}`}>
+                                              <span className={`text-[10px] sm:text-xs font-semibold px-2 py-1 sm:px-2.5 sm:py-1 rounded-md shrink-0 whitespace-nowrap ${hasData ? 'bg-accent/10 text-accent' : 'bg-background text-textMuted'}`}>
                                                 {hasData ? 'Results Verified' : 'Awaiting Agent'}
                                               </span>
                                             </div>
 
-                                            <div className={`rounded-lg p-3 border ${hasData ? 'bg-slate-50 border-slate-100' : 'bg-transparent border-transparent'}`}>
-                                              {hasData && <span className="block text-xs font-semibold text-slate-500 mb-2">SUBMITTED SCORES:</span>}
+                                            <div className={`rounded-lg p-2.5 sm:p-3 border ${hasData ? 'bg-background border-textMuted/10' : 'bg-transparent border-transparent'}`}>
+                                              {hasData && <span className="block text-[10px] sm:text-xs font-semibold text-textMuted mb-2">SUBMITTED SCORES:</span>}
                                               {hasData ? (
-                                                <div className="space-y-3">
+                                                <div className="space-y-2.5 sm:space-y-3">
                                                   <div className="grid grid-cols-2 gap-2">
                                                     {Object.entries(results).map(([party, value]) => {
                                                       const isLeading = Number(value) === maxPuVotes && maxPuVotes > 0;
                                                       return (
-                                                        <div key={party} className={`flex justify-between items-center px-2.5 py-1.5 border rounded-md ${isLeading ? 'bg-green-50 border-green-500 text-green-800 font-bold' : 'bg-white border-slate-200 text-slate-700 font-medium'}`}>
-                                                          <span className="text-sm">{party}</span>
-                                                          <div className="flex items-center space-x-1">
-                                                            <span className="text-sm">{value}</span>
-                                                            {isLeading && <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" /></svg>}
+                                                        <div key={party} className={`flex justify-between items-center px-2 py-1.5 sm:px-2.5 border rounded-md overflow-hidden ${isLeading ? 'bg-accent/10 border-accent text-accent font-bold' : 'bg-card border-textMuted/20 text-textMain font-medium'}`}>
+                                                          <span className="text-xs sm:text-sm truncate mr-1.5">{party}</span>
+                                                          <div className="flex items-center space-x-1 shrink-0">
+                                                            <span className="text-xs sm:text-sm">{value}</span>
+                                                            {isLeading && <Check className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-accent" />}
                                                           </div>
                                                         </div>
                                                       );
@@ -628,18 +627,15 @@ export default function ElectoralResultsPage() {
                                                     <button
                                                       type="button"
                                                       onClick={() => setActiveLightboxUrl(documentImgUrl)}
-                                                      className="w-full mt-2 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold py-2 px-3 border border-slate-300 rounded-md transition-colors duration-150 flex items-center justify-center space-x-2"
+                                                      className="w-full mt-2 bg-card hover:bg-background text-textMain text-[10px] sm:text-xs font-semibold py-1.5 sm:py-2 px-3 border border-textMuted/20 rounded-md transition-colors duration-150 flex items-center justify-center space-x-2"
                                                     >
-                                                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                                      </svg>
-                                                      <span>Verify Sheet Document</span>
+                                                      <Eye className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+                                                      <span className="truncate">Verify Sheet Document</span>
                                                     </button>
                                                   )}
                                                 </div>
                                               ) : (
-                                                <span className="block text-sm text-slate-400 font-medium italic">
+                                                <span className="block text-xs sm:text-sm text-textMuted/70 font-medium italic">
                                                   No returns filed yet.
                                                 </span>
                                               )}
@@ -663,7 +659,7 @@ export default function ElectoralResultsPage() {
           ) : (
             /* SUB-LGA DIRECT WARD ROOT TREE BLOCK */
             rootWards.length === 0 ? (
-              <p className="text-sm text-slate-500 font-medium pl-2">No Electoral Wards found for this view.</p>
+              <p className="text-xs sm:text-sm text-textMuted font-medium pl-2">No Electoral Wards found for this view.</p>
             ) : (
               rootWards.map(ward => {
                 const isWardOpen = !!expandedWards[ward.name];
@@ -678,31 +674,31 @@ export default function ElectoralResultsPage() {
                 const wardIngestionRatio = totalWardExpectedPus > 0 ? (totalWardReportedPus / totalWardExpectedPus) * 100 : 0;
 
                 return (
-                  <div key={ward.name} className="border border-slate-200 rounded-xl overflow-hidden bg-white">
+                  <div key={ward.name} className="border border-textMuted/20 rounded-xl overflow-hidden bg-card">
                     <div
                       onClick={() => toggleWard(userScope.lga, ward.name)}
-                      className="flex flex-col sm:flex-row sm:items-center justify-between p-4 hover:bg-slate-50 cursor-pointer transition-all select-none gap-4"
+                      className="flex flex-col sm:flex-row sm:items-center justify-between p-3 sm:p-4 hover:bg-background cursor-pointer transition-all select-none gap-3 sm:gap-4"
                     >
-                      <div className="flex items-center space-x-3">
-                        <div className={`p-1.5 rounded-md ${isWardOpen ? 'bg-slate-200 text-slate-700' : 'bg-slate-100 text-slate-500'}`}>
-                          <svg className={`w-4 h-4 transition-transform ${isWardOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
+                      <div className="flex items-center space-x-3 min-w-0">
+                        <div className={`p-1.5 rounded-md shrink-0 ${isWardOpen ? 'bg-textMuted/20 text-textMain' : 'bg-textMuted/10 text-textMuted'}`}>
+                          <ChevronDown className={`w-3 h-3 sm:w-4 sm:h-4 transition-transform ${isWardOpen ? 'rotate-180' : ''}`} />
                         </div>
-                        <div>
-                          <h5 className="text-base font-bold text-slate-800">{ward.name} Ward</h5>
-                          <span className="text-xs text-slate-500 font-medium mt-0.5 block">
+                        <div className="min-w-0">
+                          <h5 className="text-sm sm:text-base font-bold text-textMain truncate">{ward.name} Ward</h5>
+                          <span className="text-[10px] sm:text-xs text-textMuted font-medium mt-0.5 block">
                             {totalWardExpectedPus} Polling Units
                           </span>
                         </div>
                       </div>
 
-                      <div className="flex flex-col w-full sm:w-64 space-y-2 sm:text-right">
-                        <div className="flex justify-between text-xs font-semibold text-slate-600">
+                      <div className="flex flex-col w-full sm:w-56 md:w-64 space-y-1.5 sm:space-y-2 shrink-0 sm:text-right ml-9 sm:ml-0">
+                        <div className="flex justify-between text-[10px] sm:text-xs font-semibold text-textMuted">
                           <span>Reporting Progress:</span>
-                          <span className="text-slate-900">{totalWardReportedPus} / {totalWardExpectedPus} ({wardIngestionRatio.toFixed(0)}%)</span>
+                          <span className="text-textMain">{totalWardReportedPus} / {totalWardExpectedPus} ({wardIngestionRatio.toFixed(0)}%)</span>
                         </div>
-                        <div className="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
+                        <div className="w-full bg-textMuted/10 h-1.5 sm:h-2 rounded-full overflow-hidden">
                           <div
-                            className="bg-[#9A6749] h-full rounded-full transition-all duration-300"
+                            className="bg-primary h-full rounded-full transition-all duration-300"
                             style={{ width: `${Math.min(wardIngestionRatio, 100)}%` }}
                           />
                         </div>
@@ -710,10 +706,10 @@ export default function ElectoralResultsPage() {
                     </div>
 
                     {isWardOpen && (
-                      <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-4 bg-slate-50 border-t border-slate-200">
+                      <div className="p-3 sm:p-4 grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 bg-background border-t border-textMuted/20">
                         {localizedPus.length === 0 ? (
-                          <div className="flex items-center space-x-2 text-sm text-slate-500 col-span-2 py-2">
-                            <div className="w-4 h-4 border-2 border-slate-300 border-t-slate-600 rounded-full animate-spin" />
+                          <div className="flex items-center space-x-2 text-xs sm:text-sm text-textMuted col-span-1 md:col-span-2 py-2">
+                            <Loader2 className="w-4 h-4 animate-spin text-primary" />
                             <span>Loading polling units...</span>
                           </div>
                         ) : (
@@ -730,38 +726,38 @@ export default function ElectoralResultsPage() {
                             return (
                               <div
                                 key={pu.id || puCode || pu.name}
-                                className={`p-4 border rounded-xl flex flex-col justify-between space-y-4 transition-all ${hasData
-                                  ? 'bg-white border-slate-300 shadow-sm'
-                                  : 'bg-white border-dashed border-slate-200 opacity-75'
+                                className={`p-3 sm:p-4 border rounded-xl flex flex-col justify-between space-y-3 sm:space-y-4 transition-all min-w-0 ${hasData
+                                  ? 'bg-card border-textMuted/30 shadow-sm'
+                                  : 'bg-card border-dashed border-textMuted/20 opacity-75'
                                   }`}
                               >
-                                <div className="flex justify-between items-start gap-3">
-                                  <div>
-                                    <span className="block text-xs font-bold text-slate-400 mb-1">
+                                <div className="flex justify-between items-start gap-2 sm:gap-3">
+                                  <div className="min-w-0 flex-1">
+                                    <span className="block text-[10px] sm:text-xs font-bold text-textMuted/70 mb-0.5 sm:mb-1 truncate">
                                       Code: {puCode || 'N/A'}
                                     </span>
-                                    <h6 className="text-sm font-semibold text-slate-800 leading-snug">
+                                    <h6 className="text-xs sm:text-sm font-semibold text-textMain leading-snug break-words">
                                       {pu.name}
                                     </h6>
                                   </div>
-                                  <span className={`text-xs font-semibold px-2.5 py-1 rounded-md whitespace-nowrap ${hasData ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-500'}`}>
+                                  <span className={`text-[10px] sm:text-xs font-semibold px-2 py-1 sm:px-2.5 sm:py-1 rounded-md shrink-0 whitespace-nowrap ${hasData ? 'bg-accent/10 text-accent' : 'bg-background text-textMuted'}`}>
                                     {hasData ? 'Results Verified' : 'Awaiting Agent'}
                                   </span>
                                 </div>
 
-                                <div className={`rounded-lg p-3 border ${hasData ? 'bg-slate-50 border-slate-100' : 'bg-transparent border-transparent'}`}>
-                                  {hasData && <span className="block text-xs font-semibold text-slate-500 mb-2">SUBMITTED SCORES:</span>}
+                                <div className={`rounded-lg p-2.5 sm:p-3 border ${hasData ? 'bg-background border-textMuted/10' : 'bg-transparent border-transparent'}`}>
+                                  {hasData && <span className="block text-[10px] sm:text-xs font-semibold text-textMuted mb-2">SUBMITTED SCORES:</span>}
                                   {hasData ? (
-                                    <div className="space-y-3">
+                                    <div className="space-y-2.5 sm:space-y-3">
                                       <div className="grid grid-cols-2 gap-2">
                                         {Object.entries(results).map(([party, value]) => {
                                           const isLeading = Number(value) === maxPuVotes && maxPuVotes > 0;
                                           return (
-                                            <div key={party} className={`flex justify-between items-center px-2.5 py-1.5 border rounded-md ${isLeading ? 'bg-green-50 border-green-500 text-green-800 font-bold' : 'bg-white border-slate-200 text-slate-700 font-medium'}`}>
-                                              <span className="text-sm">{party}</span>
-                                              <div className="flex items-center space-x-1">
-                                                <span className="text-sm">{value}</span>
-                                                {isLeading && <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" /></svg>}
+                                            <div key={party} className={`flex justify-between items-center px-2 py-1.5 sm:px-2.5 border rounded-md overflow-hidden ${isLeading ? 'bg-accent/10 border-accent text-accent font-bold' : 'bg-card border-textMuted/20 text-textMain font-medium'}`}>
+                                              <span className="text-xs sm:text-sm truncate mr-1.5">{party}</span>
+                                              <div className="flex items-center space-x-1 shrink-0">
+                                                <span className="text-xs sm:text-sm">{value}</span>
+                                                {isLeading && <Check className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-accent" />}
                                               </div>
                                             </div>
                                           );
@@ -772,18 +768,15 @@ export default function ElectoralResultsPage() {
                                         <button
                                           type="button"
                                           onClick={() => setActiveLightboxUrl(documentImgUrl)}
-                                          className="w-full mt-2 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold py-2 px-3 border border-slate-300 rounded-md transition-colors duration-150 flex items-center justify-center space-x-2"
+                                          className="w-full mt-2 bg-card hover:bg-background text-textMain text-[10px] sm:text-xs font-semibold py-1.5 sm:py-2 px-3 border border-textMuted/20 rounded-md transition-colors duration-150 flex items-center justify-center space-x-2"
                                         >
-                                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                          </svg>
-                                          <span>Verify Sheet Document</span>
+                                          <Eye className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+                                          <span className="truncate">Verify Sheet Document</span>
                                         </button>
                                       )}
                                     </div>
                                   ) : (
-                                    <span className="block text-sm text-slate-400 font-medium italic">
+                                    <span className="block text-xs sm:text-sm text-textMuted/70 font-medium italic">
                                       No returns filed yet.
                                     </span>
                                   )}
@@ -806,41 +799,37 @@ export default function ElectoralResultsPage() {
       {/* SECURE LIGHTBOX MODAL CONTAINER */}
       {activeLightboxUrl && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/90 backdrop-blur-sm p-4 transition-opacity duration-200"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm p-4 transition-opacity duration-200"
           onClick={() => setActiveLightboxUrl(null)}
         >
           <button
             type="button"
             onClick={() => setActiveLightboxUrl(null)}
-            className="absolute top-4 right-4 text-white hover:text-slate-200 bg-white/10 hover:bg-white/20 p-2.5 rounded-full transition-colors duration-150 focus:outline-none"
+            className="absolute top-4 right-4 text-white hover:text-white bg-white/10 hover:bg-white/20 p-2.5 rounded-full transition-colors duration-150 focus:outline-none"
             title="Close Preview"
           >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" />
-            </svg>
+            <X className="w-5 h-5 sm:w-6 sm:h-6" />
           </button>
 
           <div
-            className="relative max-w-3xl max-h-[85vh] w-full bg-white rounded-xl overflow-hidden shadow-2xl flex flex-col"
+            className="relative max-w-3xl max-h-[85vh] w-full bg-card rounded-xl overflow-hidden shadow-2xl flex flex-col"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="p-4 border-b border-slate-200 flex justify-between items-center bg-slate-50">
-              <span className="text-sm font-bold text-slate-800 flex items-center space-x-2">
-                <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                </svg>
-                <span>Official Verification Sheet View</span>
+            <div className="p-3 sm:p-4 border-b border-textMuted/20 flex justify-between items-center bg-card">
+              <span className="text-xs sm:text-sm font-bold text-textMain flex items-center space-x-2 min-w-0">
+                <Lock className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-primary shrink-0" />
+                <span className="truncate">Official Verification Sheet View</span>
               </span>
-              <span className="text-xs font-semibold text-slate-500 bg-slate-200 px-2.5 py-1 rounded-md uppercase">
+              <span className="text-[10px] sm:text-xs font-semibold text-textMuted bg-background px-2 sm:px-2.5 py-1 rounded-md uppercase shrink-0 ml-2">
                 Read-Only
               </span>
             </div>
 
-            <div className="flex-1 bg-slate-100 flex items-center justify-center p-4 min-h-0 overflow-auto">
+            <div className="flex-1 bg-background flex items-center justify-center p-2 sm:p-4 min-h-0 overflow-auto">
               <img
                 src={activeLightboxUrl}
                 alt="Official Electoral Verification Sheet Document"
-                className="max-w-full max-h-[70vh] object-contain select-none shadow-sm rounded-lg bg-white"
+                className="max-w-full max-h-[60vh] sm:max-h-[70vh] object-contain select-none shadow-sm rounded-lg bg-card"
                 draggable="false"
                 onContextMenu={(e) => e.preventDefault()}
               />

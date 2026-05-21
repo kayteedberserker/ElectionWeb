@@ -2,6 +2,19 @@
 
 import React, { useState, useEffect, useTransition } from 'react';
 import { createBrowserClient } from '@supabase/ssr';
+import {
+    User,
+    Mail,
+    Phone,
+    Briefcase,
+    MapPin,
+    Lock,
+    Save,
+    AlertTriangle,
+    CheckCircle2,
+    AlertCircle,
+    Layers
+} from 'lucide-react';
 import LoadingOverlay from '../../../../components/LoadingOverlay';
 
 // Define the available political offices/seats and what geographic fields they require
@@ -97,7 +110,7 @@ export default function CandidateProfilePage() {
                 const { data: { user }, error: userError } = await supabase.auth.getUser();
 
                 if (userError || !user) {
-                    setMessage({ type: 'error', text: 'Failed to synchronize active authenticated user context.' });
+                    setMessage({ type: 'error', text: 'Failed to load user account details.' });
                     return;
                 }
 
@@ -142,7 +155,7 @@ export default function CandidateProfilePage() {
 
             } catch (err) {
                 console.error("Profile load error:", err);
-                setMessage({ type: 'error', text: 'An unexpected connection error occurred while retrieving profile data.' });
+                setMessage({ type: 'error', text: 'An unexpected connection error occurred while retrieving profile details.' });
             } finally {
                 setIsLoading(false);
             }
@@ -285,7 +298,7 @@ export default function CandidateProfilePage() {
 
         if (isScopePurgeRequired) {
             const userConfirmedPurge = window.confirm(
-                "CRITICAL WARNING:\n\nChanging your Contesting Office Seat or Target State Jurisdiction will completely REMOVE and PURGE all downline agents (Ward Supervisors, LGA Supervisors, and Polling Unit Agents) currently mapped under your candidate profile from the system.\n\nThis action prevents orphan/ghost agent data profiles from corrupting analytics boundaries. This is irreversible.\n\nAre you absolutely sure you want to proceed?"
+                "WARNING:\n\nChanging your Contesting Office or Target State will completely remove all downline agents (Ward Supervisors, LGA Supervisors, and Polling Unit Agents) currently linked to your profile.\n\nThis action prevents disconnected agent profiles from causing data errors and cannot be undone.\n\nAre you sure you want to proceed?"
             );
             if (!userConfirmedPurge) {
                 return; // Terminate execution line seamlessly
@@ -296,7 +309,7 @@ export default function CandidateProfilePage() {
             try {
                 const { data: { user }, error: userError } = await supabase.auth.getUser();
                 if (userError || !user) {
-                    setMessage({ type: 'error', text: 'Authentication reference expired. Please log in again.' });
+                    setMessage({ type: 'error', text: 'Your session has expired. Please log in again.' });
                     return;
                 }
 
@@ -311,7 +324,7 @@ export default function CandidateProfilePage() {
                     if (purgeError) {
                         setMessage({
                             type: 'error',
-                            text: `Purge Interrupted: ${purgeError.message || 'Failed to safely remove previous downline agent records. Update aborted.'}`
+                            text: `Could not clear previous sub-agents: ${purgeError.message || 'Update aborted.'}`
                         });
                         return;
                     }
@@ -329,7 +342,7 @@ export default function CandidateProfilePage() {
                     state_constituency: isFieldRequired('stateConstituency') ? formData.stateConstituency : null,
                 };
 
-                // 1. Dual-Write Transaction Task A: Update internal Auth Meta Data
+                // 1. Update internal Auth Meta Data
                 const { error: authError } = await supabase.auth.updateUser({
                     data: {
                         ...updates,
@@ -338,11 +351,11 @@ export default function CandidateProfilePage() {
                 });
 
                 if (authError) {
-                    setMessage({ type: 'error', text: authError.message || 'Failed to update user security context.' });
+                    setMessage({ type: 'error', text: authError.message || 'Failed to update account credentials.' });
                     return;
                 }
 
-                // 2. Dual-Write Transaction Task B: Explicitly write out metrics row directly to the public profiles table
+                // 2. Explicitly write out metrics row directly to the public profiles table
                 const { error: profileTableError } = await supabase
                     .from('profiles')
                     .upsert({
@@ -359,7 +372,7 @@ export default function CandidateProfilePage() {
                     }, { onConflict: 'id' });
 
                 if (profileTableError) {
-                    setMessage({ type: 'error', text: profileTableError.message || 'Auth metadata saved, but failed to synchronize into the database profile table.' });
+                    setMessage({ type: 'error', text: profileTableError.message || 'Account details saved, but failed to sync with the database profile table.' });
                     return;
                 }
 
@@ -369,10 +382,10 @@ export default function CandidateProfilePage() {
                     assignedState: updates.assigned_state || ''
                 });
 
-                setMessage({ type: 'success', text: 'Constituency scope and database profile table updated successfully!' });
+                setMessage({ type: 'success', text: 'Your profile and jurisdiction details have been updated successfully!' });
             } catch (err) {
                 console.error("Profile save error:", err);
-                setMessage({ type: 'error', text: 'Internal update failure encountered processing configuration records.' });
+                setMessage({ type: 'error', text: 'An unexpected error occurred while saving your profile data.' });
             }
         });
     };
@@ -384,7 +397,7 @@ export default function CandidateProfilePage() {
         setPasswordMessage({ type: '', text: '' });
 
         if (passwordData.newPassword !== passwordData.confirmPassword) {
-            setPasswordMessage({ type: 'error', text: 'New Passwords fields do not match.' });
+            setPasswordMessage({ type: 'error', text: 'The password fields do not match.' });
             return;
         }
 
@@ -400,115 +413,139 @@ export default function CandidateProfilePage() {
                 });
 
                 if (error) {
-                    setPasswordMessage({ type: 'error', text: error.message || 'Failed to re-key security profile credentials.' });
+                    setPasswordMessage({ type: 'error', text: error.message || 'Failed to update your password.' });
                     return;
                 }
 
-                setPasswordMessage({ type: 'success', text: 'Security credentials re-keyed and updated successfully.' });
+                setPasswordMessage({ type: 'success', text: 'Password updated successfully.' });
                 setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
             } catch (err) {
                 console.error("Password update error:", err);
-                setPasswordMessage({ type: 'error', text: 'Internal error processing cryptographic authentication updates.' });
+                setPasswordMessage({ type: 'error', text: 'An error occurred while updating your account password.' });
             }
         });
     };
 
     if (isLoading) {
-        return <LoadingOverlay message="Synchronizing dynamic constituency indices..." />;
+        return <LoadingOverlay message="Loading profile data..." />;
     }
 
     return (
-        <main className="p-4 md:p-8 max-w-4xl mx-auto space-y-12">
-            {isPending && <LoadingOverlay message="Committing security modification rules..." />}
+        <main className="p-4 md:px-8 max-w-5xl mx-auto space-y-12 text-textMain">
+            {isPending && <LoadingOverlay message="Saving updates..." />}
 
-            {/* Header Identity Bracket */}
-            <div className="border-b-2 border-[#8A7968]/20 pb-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            {/* Header Identity Section */}
+            <div className="border-b-2 border-textMuted/20 pb-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div>
-                    <h1 className="text-2xl font-black text-[#291C14] uppercase tracking-wide">Candidate Configuration Controls</h1>
-                    <p className="text-xs font-medium text-[#8A7968] mt-1">
-                        Establish office target scopes, geographic jurisdictions, and functional candidate access boundaries.
+                    <h1 className="text-2xl font-black text-textMain uppercase tracking-wide flex items-center gap-2">
+                        <User className="w-6 h-6 text-primary" />
+                        Candidate Profile Settings
+                    </h1>
+                    <p className="text-xs font-medium text-textMuted mt-1">
+                        Manage your contesting office, electoral jurisdictions, and account details.
                     </p>
                 </div>
 
-                {/* Dynamic Infrastructure Metrics Tracker HUD element */}
+                {/* Dynamic District Metrics Tracker */}
                 {formData.assignedState && (
-                    <div className="bg-[#FAF6F0] border border-[#8A7968]/20 rounded-xl px-4 py-2.5 flex flex-wrap gap-x-4 gap-y-1 text-[10px] font-black uppercase text-[#8A7968]">
-                        <div>LGAs: <span className="text-[#291C14] font-mono">{metricCounts.totalLgas}</span></div>
-                        {metricCounts.totalSenatorialDistricts > 0 && <div>Districts: <span className="text-[#291C14] font-mono">{metricCounts.totalSenatorialDistricts}</span></div>}
-                        {metricCounts.totalFederalConstituencies > 0 && <div>Fed Reps: <span className="text-[#291C14] font-mono">{metricCounts.totalFederalConstituencies}</span></div>}
-                        {metricCounts.totalStateConstituencies > 0 && <div>State Assembly: <span className="text-[#291C14] font-mono">{metricCounts.totalStateConstituencies}</span></div>}
+                    <div className="bg-background border border-textMuted/20 rounded-xl px-4 py-2.5 flex flex-wrap gap-x-4 gap-y-1 text-[10px] font-black uppercase text-textMuted items-center">
+                        <Layers className="w-3.5 h-3.5 mr-1 text-primary" />
+                        <div>LGAs: <span className="text-textMain font-mono">{metricCounts.totalLgas}</span></div>
+                        {metricCounts.totalSenatorialDistricts > 0 && <div>Districts: <span className="text-textMain font-mono">{metricCounts.totalSenatorialDistricts}</span></div>}
+                        {metricCounts.totalFederalConstituencies > 0 && <div>Fed Reps: <span className="text-textMain font-mono">{metricCounts.totalFederalConstituencies}</span></div>}
+                        {metricCounts.totalStateConstituencies > 0 && <div>State Assembly: <span className="text-textMain font-mono">{metricCounts.totalStateConstituencies}</span></div>}
                     </div>
                 )}
             </div>
 
             {/* Form Interface Block */}
             <div className="space-y-8">
-                {/* Response Message Toast for Profile */}
+                {/* Status Messages for Profile */}
                 {message.text && (
-                    <div className={`p-4 rounded-xl border-2 text-xs font-bold uppercase tracking-wider transition-all ${message.type === 'success'
-                        ? 'bg-green-50 border-green-500/30 text-green-700'
+                    <div className={`p-4 rounded-xl border-2 text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-2 ${message.type === 'success'
+                        ? 'bg-accent-light border-accent/30 text-accent'
                         : 'bg-red-50 border-red-500/30 text-red-700'
                         }`}>
+                        {message.type === 'success' ? <CheckCircle2 className="w-4 h-4" /> : <AlertCircle className="w-4 h-4" />}
                         {message.text}
                     </div>
                 )}
 
-                <form onSubmit={handleProfileUpdate} className="bg-white border-2 border-[#8A7968]/20 rounded-xl p-6 shadow-sm space-y-8">
+                <form onSubmit={handleProfileUpdate} className="bg-card border-2 border-textMuted/20 rounded-xl p-6 shadow-sm space-y-8">
 
                     {/* Section: Personal Data Fields */}
                     <div>
-                        <h3 className="text-xs font-bold tracking-widest text-[#8A7968] uppercase mb-4 border-b border-[#8A7968]/10 pb-1">
-                            Personal Core Metadata
+                        <h3 className="text-xs font-bold tracking-widest text-textMuted uppercase mb-4 border-b border-textMuted/10 pb-1 flex items-center gap-1.5">
+                            <User className="w-3.5 h-3.5" />
+                            Personal Information
                         </h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div className="flex flex-col space-y-2">
-                                <label className="text-[10px] font-bold text-[#291C14] tracking-wider uppercase">Candidate Full Name</label>
-                                <input
-                                    type="text"
-                                    name="fullName"
-                                    value={formData.fullName}
-                                    onChange={handleInputChange}
-                                    placeholder="Enter full official name"
-                                    required
-                                    className="w-full px-4 py-3 bg-[#FAF6F0] border-2 border-[#8A7968]/10 rounded-xl text-xs font-bold text-[#291C14] uppercase tracking-wide focus:border-[#9A6749] focus:outline-none transition-all"
-                                />
+                                <label className="text-[10px] font-bold text-textMain tracking-wider uppercase">Full Name</label>
+                                <div className="relative">
+                                    <span className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-textMuted">
+                                        <User className="w-4 h-4" />
+                                    </span>
+                                    <input
+                                        type="text"
+                                        name="fullName"
+                                        value={formData.fullName}
+                                        onChange={handleInputChange}
+                                        placeholder="Enter full official name"
+                                        required
+                                        className="w-full pl-10 pr-4 py-3 bg-background border-2 border-textMuted/10 rounded-xl text-xs font-bold text-textMain uppercase tracking-wide focus:border-primary focus:outline-none transition-all"
+                                    />
+                                </div>
                             </div>
+
                             <div className="flex flex-col space-y-2">
-                                <label className="text-[10px] font-bold text-[#8A7968] tracking-wider uppercase">Account Email (Immutable)</label>
-                                <input
-                                    type="email"
-                                    value={formData.email}
-                                    disabled
-                                    className="w-full px-4 py-3 bg-[#FAF6F0]/50 border-2 border-[#8A7968]/5 rounded-xl text-xs font-bold text-[#8A7968] tracking-wide cursor-not-allowed opacity-70"
-                                />
+                                <label className="text-[10px] font-bold text-textMuted tracking-wider uppercase">Email Address (Cannot be changed)</label>
+                                <div className="relative">
+                                    <span className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-textMuted/50">
+                                        <Mail className="w-4 h-4" />
+                                    </span>
+                                    <input
+                                        type="email"
+                                        value={formData.email}
+                                        disabled
+                                        className="w-full pl-10 pr-4 py-3 bg-background/50 border-2 border-textMuted/5 rounded-xl text-xs font-bold text-textMuted tracking-wide cursor-not-allowed opacity-70"
+                                    />
+                                </div>
                             </div>
+
                             <div className="flex flex-col space-y-2">
-                                <label className="text-[10px] font-bold text-[#291C14] tracking-wider uppercase">Contact Phone Line</label>
-                                <input
-                                    type="tel"
-                                    name="phone"
-                                    value={formData.phone}
-                                    onChange={handleInputChange}
-                                    placeholder="Enter active mobile number"
-                                    className="w-full px-4 py-3 bg-[#FAF6F0] border-2 border-[#8A7968]/10 rounded-xl text-xs font-bold text-[#291C14] tracking-wide focus:border-[#9A6749] focus:outline-none transition-all"
-                                />
+                                <label className="text-[10px] font-bold text-textMain tracking-wider uppercase">Phone Number</label>
+                                <div className="relative">
+                                    <span className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-textMuted">
+                                        <Phone className="w-4 h-4" />
+                                    </span>
+                                    <input
+                                        type="tel"
+                                        name="phone"
+                                        value={formData.phone}
+                                        onChange={handleInputChange}
+                                        placeholder="Enter active phone number"
+                                        className="w-full pl-10 pr-4 py-3 bg-background border-2 border-textMuted/10 rounded-xl text-xs font-bold text-textMain tracking-wide focus:border-primary focus:outline-none transition-all"
+                                    />
+                                </div>
                             </div>
                         </div>
                     </div>
 
                     {/* Section: Target Contest Office Parameters */}
                     <div>
-                        <h3 className="text-xs font-bold tracking-widest text-[#8A7968] uppercase mb-4 border-b border-[#8A7968]/10 pb-1">
-                            Target Electoral Office Space
+                        <h3 className="text-xs font-bold tracking-widest text-textMuted uppercase mb-4 border-b border-textMuted/10 pb-1 flex items-center gap-1.5">
+                            <Briefcase className="w-3.5 h-3.5" />
+                            Electoral Office Details
                         </h3>
                         <div className="max-w-md flex flex-col space-y-2">
-                            <label className="text-[10px] font-bold text-[#291C14] tracking-wider uppercase">Office Contesting Seat</label>
+                            <label className="text-[10px] font-bold text-textMain tracking-wider uppercase">Office You Are Contesting For</label>
                             <select
                                 name="contestingSeat"
                                 value={formData.contestingSeat}
                                 onChange={handleInputChange}
                                 required
-                                className="w-full px-4 py-3 bg-[#FAF6F0] border-2 border-[#8A7968]/10 rounded-xl text-xs font-bold text-[#291C14] uppercase tracking-wide focus:border-[#9A6749] focus:outline-none transition-all cursor-pointer"
+                                className="w-full px-4 py-3 bg-background border-2 border-textMuted/10 rounded-xl text-xs font-bold text-textMain uppercase tracking-wide focus:border-primary focus:outline-none transition-all cursor-pointer"
                             >
                                 <option value="">-- SELECT CONTESTING OFFICE --</option>
                                 {CONTESTING_SEATS.map(seat => (
@@ -521,11 +558,12 @@ export default function CandidateProfilePage() {
                     {/* Section: Dynamic Geographic Boundary Inputs */}
                     {formData.contestingSeat && (
                         <div>
-                            <h3 className="text-xs font-bold tracking-widest text-[#8A7968] uppercase mb-2 border-b border-[#8A7968]/10 pb-1">
-                                Jurisdiction Configuration Parameters
+                            <h3 className="text-xs font-bold tracking-widest text-textMuted uppercase mb-2 border-b border-textMuted/10 pb-1 flex items-center gap-1.5">
+                                <MapPin className="w-3.5 h-3.5" />
+                                Location & Jurisdiction Boundaries
                             </h3>
-                            <p className="text-[10px] text-[#8A7968] font-medium mb-4 italic">
-                                Provide structural territory fields corresponding specifically to your chosen office jurisdiction.
+                            <p className="text-[10px] text-textMuted font-medium mb-4 italic">
+                                Select the location boundaries that correspond to your chosen contesting office.
                             </p>
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -533,13 +571,13 @@ export default function CandidateProfilePage() {
                                 {/* Base Rule: Every single option requires a parent state container */}
                                 {isFieldRequired('state') && (
                                     <div className="flex flex-col space-y-2">
-                                        <label className="text-[10px] font-bold text-[#291C14] tracking-wider uppercase">Target State Boundary</label>
+                                        <label className="text-[10px] font-bold text-textMain tracking-wider uppercase">State Jurisdiction</label>
                                         <select
                                             name="assignedState"
                                             value={formData.assignedState}
                                             onChange={handleInputChange}
                                             required
-                                            className="w-full px-4 py-3 bg-[#FAF6F0] border-2 border-[#8A7968]/10 rounded-xl text-xs font-bold text-[#291C14] uppercase tracking-wide focus:border-[#9A6749] focus:outline-none transition-all cursor-pointer"
+                                            className="w-full px-4 py-3 bg-background border-2 border-textMuted/10 rounded-xl text-xs font-bold text-textMain uppercase tracking-wide focus:border-primary focus:outline-none transition-all cursor-pointer"
                                         >
                                             <option value="">-- SELECT STATE --</option>
                                             {statesList.map(state => (
@@ -554,7 +592,7 @@ export default function CandidateProfilePage() {
                                 {/* Senate Path: Dynamic selection dropdown matching API profiles */}
                                 {isFieldRequired('senatorialDistrict') && (
                                     <div className="flex flex-col space-y-2">
-                                        <label className="text-[10px] font-bold text-[#291C14] tracking-wider uppercase">
+                                        <label className="text-[10px] font-bold text-textMain tracking-wider uppercase">
                                             Senatorial District {metricCounts.totalSenatorialDistricts > 0 && `(${metricCounts.totalSenatorialDistricts} Total)`}
                                         </label>
                                         <select
@@ -563,7 +601,7 @@ export default function CandidateProfilePage() {
                                             onChange={handleInputChange}
                                             disabled={!formData.assignedState || stateSenatorialDistricts.length === 0}
                                             required
-                                            className="w-full px-4 py-3 bg-[#FAF6F0] border-2 border-[#8A7968]/10 rounded-xl text-xs font-bold text-[#291C14] uppercase tracking-wide focus:border-[#9A6749] focus:outline-none transition-all cursor-pointer disabled:opacity-50"
+                                            className="w-full px-4 py-3 bg-background border-2 border-textMuted/10 rounded-xl text-xs font-bold text-textMain uppercase tracking-wide focus:border-primary focus:outline-none transition-all cursor-pointer disabled:opacity-50"
                                         >
                                             <option value="">-- SELECT SENATORIAL ZONE --</option>
                                             {stateSenatorialDistricts.map(district => (
@@ -578,7 +616,7 @@ export default function CandidateProfilePage() {
                                 {/* House of Reps Path: Dynamic constituency select block */}
                                 {isFieldRequired('federalConstituency') && (
                                     <div className="flex flex-col space-y-2">
-                                        <label className="text-[10px] font-bold text-[#291C14] tracking-wider uppercase">
+                                        <label className="text-[10px] font-bold text-textMain tracking-wider uppercase">
                                             Federal Constituency {metricCounts.totalFederalConstituencies > 0 && `(${metricCounts.totalFederalConstituencies} Total)`}
                                         </label>
                                         <select
@@ -587,7 +625,7 @@ export default function CandidateProfilePage() {
                                             onChange={handleInputChange}
                                             disabled={!formData.assignedState || stateFederalConstituencies.length === 0}
                                             required
-                                            className="w-full px-4 py-3 bg-[#FAF6F0] border-2 border-[#8A7968]/10 rounded-xl text-xs font-bold text-[#291C14] uppercase tracking-wide focus:border-[#9A6749] focus:outline-none transition-all cursor-pointer disabled:opacity-50"
+                                            className="w-full px-4 py-3 bg-background border-2 border-textMuted/10 rounded-xl text-xs font-bold text-textMain uppercase tracking-wide focus:border-primary focus:outline-none transition-all cursor-pointer disabled:opacity-50"
                                         >
                                             <option value="">-- SELECT CONSTITUENCY --</option>
                                             {stateFederalConstituencies.map(constituency => (
@@ -602,8 +640,8 @@ export default function CandidateProfilePage() {
                                 {/* State House of Assembly Path: Transformed from text input to dynamic select dropdown */}
                                 {isFieldRequired('stateConstituency') && (
                                     <div className="flex flex-col space-y-2">
-                                        <label className="text-[10px] font-bold text-[#291C14] tracking-wider uppercase">
-                                            State Constituency Location {metricCounts.totalStateConstituencies > 0 && `(${metricCounts.totalStateConstituencies} Total)`}
+                                        <label className="text-[10px] font-bold text-textMain tracking-wider uppercase">
+                                            State Constituency {metricCounts.totalStateConstituencies > 0 && `(${metricCounts.totalStateConstituencies} Total)`}
                                         </label>
                                         <select
                                             name="stateConstituency"
@@ -611,7 +649,7 @@ export default function CandidateProfilePage() {
                                             onChange={handleInputChange}
                                             disabled={!formData.assignedState || stateConstituenciesList.length === 0}
                                             required
-                                            className="w-full px-4 py-3 bg-[#FAF6F0] border-2 border-[#8A7968]/10 rounded-xl text-xs font-bold text-[#291C14] uppercase tracking-wide focus:border-[#9A6749] focus:outline-none transition-all cursor-pointer disabled:opacity-50"
+                                            className="w-full px-4 py-3 bg-background border-2 border-textMuted/10 rounded-xl text-xs font-bold text-textMain uppercase tracking-wide focus:border-primary focus:outline-none transition-all cursor-pointer disabled:opacity-50"
                                         >
                                             <option value="">-- SELECT STATE CONSTITUENCY --</option>
                                             {stateConstituenciesList.map(constituency => (
@@ -626,7 +664,7 @@ export default function CandidateProfilePage() {
                                 {/* LGA Path: Triggered for Chairmen, Councillors, or nested dependencies */}
                                 {isFieldRequired('lga') && (
                                     <div className="flex flex-col space-y-2">
-                                        <label className="text-[10px] font-bold text-[#291C14] tracking-wider uppercase">
+                                        <label className="text-[10px] font-bold text-textMain tracking-wider uppercase">
                                             Local Government Area (LGA) {metricCounts.totalLgas > 0 && `(${metricCounts.totalLgas} Total)`}
                                         </label>
                                         <select
@@ -635,7 +673,7 @@ export default function CandidateProfilePage() {
                                             onChange={handleInputChange}
                                             disabled={!formData.assignedState}
                                             required
-                                            className="w-full px-4 py-3 bg-[#FAF6F0] border-2 border-[#8A7968]/10 rounded-xl text-xs font-bold text-[#291C14] uppercase tracking-wide focus:border-[#9A6749] focus:outline-none transition-all cursor-pointer disabled:opacity-50"
+                                            className="w-full px-4 py-3 bg-background border-2 border-textMuted/10 rounded-xl text-xs font-bold text-textMain uppercase tracking-wide focus:border-primary focus:outline-none transition-all cursor-pointer disabled:opacity-50"
                                         >
                                             <option value="">-- SELECT LGA --</option>
                                             {lgasList.map(lga => (
@@ -650,8 +688,8 @@ export default function CandidateProfilePage() {
                                 {/* Ward Path: Rendered strictly for localized Ward Councillor scopes */}
                                 {isFieldRequired('ward') && (
                                     <div className="flex flex-col space-y-2">
-                                        <label className="text-[10px] font-bold text-[#291C14] tracking-wider uppercase">
-                                            Electoral Ward boundary {metricCounts.totalWards > 0 && `(${metricCounts.totalWards} Total)`}
+                                        <label className="text-[10px] font-bold text-textMain tracking-wider uppercase">
+                                            Electoral Ward {metricCounts.totalWards > 0 && `(${metricCounts.totalWards} Total)`}
                                         </label>
                                         <select
                                             name="assignedWard"
@@ -659,7 +697,7 @@ export default function CandidateProfilePage() {
                                             onChange={handleInputChange}
                                             disabled={!formData.assignedLga}
                                             required
-                                            className="w-full px-4 py-3 bg-[#FAF6F0] border-2 border-[#8A7968]/10 rounded-xl text-xs font-bold text-[#291C14] uppercase tracking-wide focus:border-[#9A6749] focus:outline-none transition-all cursor-pointer disabled:opacity-50"
+                                            className="w-full px-4 py-3 bg-background border-2 border-textMuted/10 rounded-xl text-xs font-bold text-textMain uppercase tracking-wide focus:border-primary focus:outline-none transition-all cursor-pointer disabled:opacity-50"
                                         >
                                             <option value="">-- SELECT WARD --</option>
                                             {wardsList.map(ward => (
@@ -676,63 +714,76 @@ export default function CandidateProfilePage() {
                     )}
 
                     {/* Submissions Control Node */}
-                    <div className="border-t-2 border-[#FAF6F0] pt-4 flex justify-end">
+                    <div className="border-t-2 border-background pt-4 flex justify-end">
                         <button
                             type="submit"
                             disabled={isPending}
-                            className="bg-[#9A6749] text-white border-2 border-[#9A6749] hover:bg-white hover:text-[#9A6749] text-xs font-bold uppercase tracking-wider px-6 py-3 rounded-xl transition-all disabled:opacity-50 min-w-[180px] text-center shadow-sm"
+                            className="bg-primary text-white border-2 border-primary hover:bg-card hover:text-primary text-xs font-bold uppercase tracking-wider px-6 py-3 rounded-xl transition-all disabled:opacity-50 min-w-[180px] text-center shadow-sm flex items-center justify-center gap-2 cursor-pointer"
                         >
-                            {isPending ? 'Saving Record...' : 'Apply Scope Changes'}
+                            <Save className="w-4 h-4" />
+                            {isPending ? 'Saving Changes...' : 'Save Profile Changes'}
                         </button>
                     </div>
                 </form>
 
-                {/* Section: Security Matrix Configuration */}
-                <div className="pt-4 border-t border-[#8A7968]/10">
+                {/* Section: Change Password */}
+                <div className="pt-4 border-t border-textMuted/10">
                     {passwordMessage.text && (
-                        <div className={`mb-6 p-4 rounded-xl border-2 text-xs font-bold uppercase tracking-wider transition-all ${passwordMessage.type === 'success'
-                            ? 'bg-green-50 border-green-500/30 text-green-700'
+                        <div className={`mb-6 p-4 rounded-xl border-2 text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-2 ${passwordMessage.type === 'success'
+                            ? 'bg-accent-light border-accent/30 text-accent'
                             : 'bg-red-50 border-red-500/30 text-red-700'
                             }`}>
+                            {passwordMessage.type === 'success' ? <CheckCircle2 className="w-4 h-4" /> : <AlertCircle className="w-4 h-4" />}
                             {passwordMessage.text}
                         </div>
                     )}
 
-                    <form onSubmit={handlePasswordUpdate} className="bg-white border-2 border-[#8A7968]/20 rounded-xl p-6 shadow-sm space-y-6">
+                    <form onSubmit={handlePasswordUpdate} className="bg-card border-2 border-textMuted/20 rounded-xl p-6 shadow-sm space-y-6">
                         <div>
-                            <h3 className="text-xs font-bold tracking-widest text-[#8A7968] uppercase mb-1 border-b border-[#8A7968]/10 pb-1">
-                                Security Management Core
+                            <h3 className="text-xs font-bold tracking-widest text-textMuted uppercase mb-1 border-b border-textMuted/10 pb-1 flex items-center gap-1.5">
+                                <Lock className="w-3.5 h-3.5" />
+                                Account Security
                             </h3>
-                            <p className="text-[10px] text-[#8A7968] font-medium mb-4 italic">
-                                Re-key your cryptographic system access password rules safely below.
+                            <p className="text-[10px] text-textMuted font-medium mb-4 italic">
+                                Update your account password below to keep your credentials secure.
                             </p>
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div className="flex flex-col space-y-2">
-                                <label className="text-[10px] font-bold text-[#291C14] tracking-wider uppercase">New Secure Password</label>
-                                <input
-                                    type="password"
-                                    name="newPassword"
-                                    value={passwordData.newPassword}
-                                    onChange={handlePasswordInputChange}
-                                    placeholder="••••••••"
-                                    required
-                                    className="w-full px-4 py-3 bg-[#FAF6F0] border-2 border-[#8A7968]/10 rounded-xl text-xs font-bold text-[#291C14] focus:border-[#9A6749] focus:outline-none transition-all"
-                                />
+                                <label className="text-[10px] font-bold text-textMain tracking-wider uppercase">New Password</label>
+                                <div className="relative">
+                                    <span className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-textMuted">
+                                        <Lock className="w-4 h-4" />
+                                    </span>
+                                    <input
+                                        type="password"
+                                        name="newPassword"
+                                        value={passwordData.newPassword}
+                                        onChange={handlePasswordInputChange}
+                                        placeholder="••••••••"
+                                        required
+                                        className="w-full pl-10 pr-4 py-3 bg-background border-2 border-textMuted/10 rounded-xl text-xs font-bold text-textMain focus:border-primary focus:outline-none transition-all"
+                                    />
+                                </div>
                             </div>
 
                             <div className="flex flex-col space-y-2">
-                                <label className="text-[10px] font-bold text-[#291C14] tracking-wider uppercase">Confirm New Password</label>
-                                <input
-                                    type="password"
-                                    name="confirmPassword"
-                                    value={passwordData.confirmPassword}
-                                    onChange={handlePasswordInputChange}
-                                    placeholder="••••••••"
-                                    required
-                                    className="w-full px-4 py-3 bg-[#FAF6F0] border-2 border-[#8A7968]/10 rounded-xl text-xs font-bold text-[#291C14] focus:border-[#9A6749] focus:outline-none transition-all"
-                                />
+                                <label className="text-[10px] font-bold text-textMain tracking-wider uppercase">Confirm New Password</label>
+                                <div className="relative">
+                                    <span className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-textMuted">
+                                        <Lock className="w-4 h-4" />
+                                    </span>
+                                    <input
+                                        type="password"
+                                        name="confirmPassword"
+                                        value={passwordData.confirmPassword}
+                                        onChange={handlePasswordInputChange}
+                                        placeholder="••••••••"
+                                        required
+                                        className="w-full pl-10 pr-4 py-3 bg-background border-2 border-textMuted/10 rounded-xl text-xs font-bold text-textMain focus:border-primary focus:outline-none transition-all"
+                                    />
+                                </div>
                             </div>
                         </div>
 
@@ -740,9 +791,10 @@ export default function CandidateProfilePage() {
                             <button
                                 type="submit"
                                 disabled={isPending}
-                                className="bg-[#291C14] text-white border-2 border-[#291C14] hover:bg-white hover:text-[#291C14] text-xs font-bold uppercase tracking-wider px-6 py-3 rounded-xl transition-all disabled:opacity-50 min-w-[180px] text-center shadow-sm"
+                                className="bg-primary-dark text-white border-2 border-primary-dark hover:bg-card hover:text-primary-dark text-xs font-bold uppercase tracking-wider px-6 py-3 rounded-xl transition-all disabled:opacity-50 min-w-[180px] text-center shadow-sm flex items-center justify-center gap-2 cursor-pointer"
                             >
-                                {isPending ? 'Updating Access...' : 'Update Password'}
+                                <Lock className="w-4 h-4" />
+                                {isPending ? 'Updating Password...' : 'Update Password'}
                             </button>
                         </div>
                     </form>

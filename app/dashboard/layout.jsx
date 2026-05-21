@@ -1,11 +1,9 @@
-// app/dashboard/layout.jsx
 import React from 'react';
 import { redirect } from 'next/navigation';
-import { cookies } from 'next/headers';
-import { createClient } from '../../utils/supabase/server'; // Update this path to match your structure
+import { createClient } from '../../utils/supabase/server';
 import DashboardSidebar from '../../components/DashboardSidebar';
-export const dynamic = 'force-dynamic';
 
+export const dynamic = 'force-dynamic';
 
 export default async function DashboardRootLayout({ children }) {
     const supabase = await createClient();
@@ -15,7 +13,7 @@ export default async function DashboardRootLayout({ children }) {
 
     // Instant server-side interception if unauthorized
     if (error || !user) {
-        redirect('/auth/login');
+        redirect('/login');
     }
 
     const userMetadata = {
@@ -25,15 +23,16 @@ export default async function DashboardRootLayout({ children }) {
     };
 
     // Server Action to securely terminate session tokens on the backend
-    const handleSystemLogout = async () => {
+    // Marking only this function as a Server Action
+    async function handleSystemLogout() {
         'use server';
         const supabaseServer = await createClient();
         await supabaseServer.auth.signOut();
         redirect('/login');
-    };
+    }
 
     return (
-        <div className="min-h-screen bg-[#FAF6F0] relative">
+        <div className="min-h-screen bg-[#F9FAFB] relative font-sans text-[#111827] selection:bg-[#1E3A8A]/20">
 
             {/* Fixed Left-Hand Side Command Panel Component */}
             <DashboardSidebar
@@ -41,10 +40,10 @@ export default async function DashboardRootLayout({ children }) {
                 onLogout={handleSystemLogout}
             />
 
-            {/* Core Content Viewport: Offset left on desktop viewports to clear space for the sidebar layout */}
-            <div className="pt-16 lg:pt-0 lg:pl-72 min-h-screen transition-all">
+            {/* Core Content Viewport */}
+            <main className="pt-16 lg:pt-8 px-6 lg:pl-80 min-h-screen transition-all">
                 {children}
-            </div>
+            </main>
         </div>
     );
 }

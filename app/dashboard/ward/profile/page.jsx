@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useTransition } from 'react';
 import { createBrowserClient } from '@supabase/ssr';
+import { User, Mail, Phone, Shield, MapPin, Lock, Save, Key, RefreshCw } from 'lucide-react';
 import LoadingOverlay from '../../../../components/LoadingOverlay';
 
 export default function WardSupervisorProfilePage() {
@@ -48,7 +49,7 @@ export default function WardSupervisorProfilePage() {
                 const { data: { user }, error: userError } = await supabase.auth.getUser();
 
                 if (userError || !user) {
-                    setMessage({ type: 'error', text: 'Failed to synchronize authenticated user session.' });
+                    setMessage({ type: 'error', text: 'Failed to load authenticated user session.' });
                     return;
                 }
 
@@ -220,193 +221,228 @@ export default function WardSupervisorProfilePage() {
     }
 
     return (
-        <main className="p-4 md:p-8 max-w-4xl mx-auto space-y-12">
+        <main className="py-4 max-w-5xl mx-auto space-y-10 text-textMain">
             {isPending && <LoadingOverlay message="Saving updates..." />}
 
             {/* Profile Identity Header */}
-            <div className="border-b-2 border-[#8A7968]/20 pb-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div className="border-b border-gray-200 pb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div>
-                    <h1 className="text-2xl font-black text-[#291C14] uppercase tracking-wide">Supervisor Profile Settings</h1>
-                    <p className="text-xs font-medium text-[#8A7968] mt-1">
+                    <h1 className="text-2xl font-bold tracking-tight text-textMain flex items-center gap-2">
+                        <Shield className="w-6 h-6 text-primary" />
+                        Supervisor Profile Settings
+                    </h1>
+                    <p className="text-sm text-textMuted mt-1">
                         Manage your contact information, update security settings, and review your assigned geographic jurisdictions.
                     </p>
                 </div>
 
-                {/* Supervisor Jurisdiction Tracker Display Element */}
+                {/* Supervisor Jurisdiction Assignment Display Element */}
                 {formData.assignedWards.length > 0 && (
-                    <div className="bg-[#FAF6F0] border border-[#8A7968]/20 rounded-xl px-4 py-3 flex flex-col items-end text-right max-w-md">
-                        <div className="text-[10px] font-black text-[#9A6749] uppercase tracking-wider">
-                            Assigned LGA: <span className="text-[#291C14] font-mono font-black">{formData.assignedLga?.toUpperCase()}, {formData.assignedState?.toUpperCase()} STATE</span>
+                    <div className="bg-card border border-gray-200 rounded-xl p-4 flex flex-col shadow-sm max-w-md w-full md:w-auto">
+                        <div className="text-xs font-semibold text-gold flex items-center gap-1.5 mb-2">
+                            <MapPin className="w-3.5 h-3.5 text-gold" />
+                            <span>ASSIGNED LGA: {formData.assignedLga?.toUpperCase()}, {formData.assignedState?.toUpperCase()} STATE</span>
                         </div>
-                        <div className="flex gap-x-4 text-[9px] font-bold uppercase text-[#8A7968] mt-1">
-                            <div>Total Wards: <span className="text-[#291C14] font-mono">{formData.assignedWards.length}</span></div>
-                            {metricCounts.totalPollingUnits > 0 && <div>Total Polling Units: <span className="text-[#291C14] font-mono">{metricCounts.totalPollingUnits}</span></div>}
+                        <div className="grid grid-cols-2 gap-4 text-xs text-textMuted border-t border-gray-100 pt-2">
+                            <div>Total Wards: <span className="text-textMain font-bold ml-1">{formData.assignedWards.length}</span></div>
+                            {metricCounts.totalPollingUnits > 0 && (
+                                <div>Polling Units: <span className="text-textMain font-bold ml-1">{metricCounts.totalPollingUnits}</span></div>
+                            )}
                         </div>
-                        <div className="text-[9px] text-gray-500 font-bold mt-1 overflow-hidden text-ellipsis max-w-xs whitespace-nowrap">
+                        <div className="text-[11px] text-textMuted mt-2 bg-gray-50 p-2 rounded border border-gray-100 max-w-xs overflow-hidden text-ellipsis whitespace-nowrap">
                             Wards: {formData.assignedWards.join(', ').toUpperCase()}
                         </div>
                     </div>
                 )}
             </div>
 
-            {/* Form Workspace Grid */}
+            {/* Profile Configuration Workspace */}
             <div className="space-y-8">
                 {message.text && (
-                    <div className={`p-4 rounded-xl border-2 text-xs font-bold uppercase tracking-wider transition-all ${message.type === 'success'
-                        ? 'bg-green-50 border-green-500/30 text-green-700'
-                        : 'bg-red-50 border-red-500/30 text-red-700'
+                    <div className={`p-4 rounded-xl border text-sm font-medium flex items-center gap-2 transition-all ${message.type === 'success'
+                        ? 'bg-accent-light border-accent/30 text-accent'
+                        : 'bg-red-50 border-red-200 text-red-700'
                         }`}>
+                        <div className={`w-1.5 h-1.5 rounded-full ${message.type === 'success' ? 'bg-accent' : 'bg-red-600'}`} />
                         {message.text}
                     </div>
                 )}
 
-                <form onSubmit={handleProfileUpdate} className="bg-white border-2 border-[#8A7968]/20 rounded-xl p-6 shadow-sm space-y-8">
+                <form onSubmit={handleProfileUpdate} className="bg-card border border-gray-200 rounded-xl p-6 shadow-sm space-y-6">
 
-                    {/* Identity Data Group */}
+                    {/* Personal Information Group */}
                     <div>
-                        <h3 className="text-xs font-bold tracking-widest text-[#8A7968] uppercase mb-4 border-b border-[#8A7968]/10 pb-1">
-                            Supervisor Information
+                        <h3 className="text-sm font-semibold text-primary flex items-center gap-2 mb-4 border-b border-gray-100 pb-2">
+                            <User className="w-4 h-4 text-primary" />
+                            Personal Information
                         </h3>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div className="flex flex-col space-y-2">
-                                <label className="text-[10px] font-bold text-[#291C14] tracking-wider uppercase">Full Name</label>
-                                <input
-                                    type="text"
-                                    name="fullName"
-                                    value={formData.fullName}
-                                    onChange={handleInputChange}
-                                    placeholder="Enter full name"
-                                    required
-                                    className="w-full px-4 py-3 bg-[#FAF6F0] border-2 border-[#8A7968]/10 rounded-xl text-xs font-bold text-[#291C14] uppercase tracking-wide focus:border-[#9A6749] focus:outline-none transition-all"
-                                />
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="flex flex-col space-y-1.5">
+                                <label className="text-xs font-semibold text-textMain tracking-wide uppercase">Full Name</label>
+                                <div className="relative">
+                                    <input
+                                        type="text"
+                                        name="fullName"
+                                        value={formData.fullName}
+                                        onChange={handleInputChange}
+                                        placeholder="Enter full name"
+                                        required
+                                        className="w-full pl-3 pr-4 py-2.5 bg-background border border-gray-300 rounded-lg text-sm text-textMain focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-all"
+                                    />
+                                </div>
                             </div>
-                            <div className="flex flex-col space-y-2">
-                                <label className="text-[10px] font-bold text-[#8A7968] tracking-wider uppercase">Email Address (Locked)</label>
-                                <input
-                                    type="email"
-                                    value={formData.email}
-                                    disabled
-                                    className="w-full px-4 py-3 bg-[#FAF6F0]/50 border-2 border-[#8A7968]/5 rounded-xl text-xs font-bold text-[#8A7968] tracking-wide cursor-not-allowed opacity-70"
-                                />
+                            <div className="flex flex-col space-y-1.5">
+                                <label className="text-xs font-semibold text-textMuted tracking-wide uppercase">Email Address (Locked)</label>
+                                <div className="relative">
+                                    <Mail className="w-4 h-4 text-textMuted/60 absolute left-3 top-3.5" />
+                                    <input
+                                        type="email"
+                                        value={formData.email}
+                                        disabled
+                                        className="w-full pl-9 pr-4 py-2.5 bg-gray-100 border border-gray-200 rounded-lg text-sm text-textMuted cursor-not-allowed opacity-70"
+                                    />
+                                </div>
                             </div>
-                            <div className="flex flex-col space-y-2">
-                                <label className="text-[10px] font-bold text-[#291C14] tracking-wider uppercase">Phone Number</label>
-                                <input
-                                    type="tel"
-                                    name="phone"
-                                    value={formData.phone}
-                                    onChange={handleInputChange}
-                                    placeholder="Enter phone number"
-                                    className="w-full px-4 py-3 bg-[#FAF6F0] border-2 border-[#8A7968]/10 rounded-xl text-xs font-bold text-[#291C14] tracking-wide focus:border-[#9A6749] focus:outline-none transition-all"
-                                />
+                            <div className="flex flex-col space-y-1.5">
+                                <label className="text-xs font-semibold text-textMain tracking-wide uppercase">Phone Number</label>
+                                <div className="relative">
+                                    <Phone className="w-4 h-4 text-textMuted/60 absolute left-3 top-3.5" />
+                                    <input
+                                        type="tel"
+                                        name="phone"
+                                        value={formData.phone}
+                                        onChange={handleInputChange}
+                                        placeholder="Enter phone number"
+                                        className="w-full pl-9 pr-4 py-2.5 bg-background border border-gray-300 rounded-lg text-sm text-textMain focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-all"
+                                    />
+                                </div>
                             </div>
-                            <div className="flex flex-col space-y-2">
-                                <label className="text-[10px] font-bold text-[#8A7968] tracking-wider uppercase">Account Role Type</label>
-                                <div className="w-full px-4 py-3 bg-[#FAF6F0]/70 border-2 border-[#8A7968]/5 rounded-xl text-xs font-black text-[#9A6749] uppercase tracking-wider">
+                            <div className="flex flex-col space-y-1.5">
+                                <label className="text-xs font-semibold text-textMuted tracking-wide uppercase">Account Role Type</label>
+                                <div className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm font-medium text-primary uppercase tracking-wide">
                                     Ward Supervisor
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    {/* Immutable Assignment Parameters Block */}
+                    {/* Assigned Electoral Jurisdictions */}
                     <div>
-                        <h3 className="text-xs font-bold tracking-widest text-[#8A7968] uppercase mb-2 border-b border-[#8A7968]/10 pb-1">
+                        <h3 className="text-sm font-semibold text-primary flex items-center gap-2 mb-1 border-b border-gray-100 pb-2">
+                            <MapPin className="w-4 h-4 text-primary" />
                             Assigned Locations
                         </h3>
-                        <p className="text-[10px] text-[#8A7968] font-medium mb-4 italic">
+                        <p className="text-xs text-textMuted mb-4 italic">
                             Your geographic location assignment is managed by your administrator and cannot be modified from this profile page.
                         </p>
 
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            <div className="flex flex-col space-y-2">
-                                <label className="text-[10px] font-bold text-[#8A7968] tracking-wider uppercase">Assigned State</label>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div className="flex flex-col space-y-1.5">
+                                <label className="text-xs font-semibold text-textMuted tracking-wide uppercase">Assigned State</label>
                                 <input
                                     type="text"
                                     value={formData.assignedState || 'UNASSIGNED'}
                                     disabled
-                                    className="w-full px-4 py-3 bg-[#FAF6F0]/50 border-2 border-[#8A7968]/5 rounded-xl text-xs font-bold text-[#8A7968] uppercase tracking-wide cursor-not-allowed opacity-70"
+                                    className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm text-textMuted uppercase tracking-wide cursor-not-allowed opacity-70"
                                 />
                             </div>
-                            <div className="flex flex-col space-y-2">
-                                <label className="text-[10px] font-bold text-[#8A7968] tracking-wider uppercase">Assigned LGA</label>
+                            <div className="flex flex-col space-y-1.5">
+                                <label className="text-xs font-semibold text-textMuted tracking-wide uppercase">Assigned LGA</label>
                                 <input
                                     type="text"
                                     value={formData.assignedLga || 'UNASSIGNED'}
                                     disabled
-                                    className="w-full px-4 py-3 bg-[#FAF6F0]/50 border-2 border-[#8A7968]/5 rounded-xl text-xs font-bold text-[#8A7968] uppercase tracking-wide cursor-not-allowed opacity-70"
+                                    className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm text-textMuted uppercase tracking-wide cursor-not-allowed opacity-70"
                                 />
                             </div>
-                            <div className="flex flex-col space-y-2">
-                                <label className="text-[10px] font-bold text-[#8A7968] tracking-wider uppercase">Assigned Wards</label>
+                            <div className="flex flex-col space-y-1.5">
+                                <label className="text-xs font-semibold text-textMuted tracking-wide uppercase">Assigned Wards</label>
                                 <input
                                     type="text"
                                     value={formData.assignedWards.length > 0 ? formData.assignedWards.join(', ').toUpperCase() : 'UNASSIGNED'}
                                     disabled
-                                    className="w-full px-4 py-3 bg-[#FAF6F0]/50 border-2 border-[#8A7968]/5 rounded-xl text-xs font-bold text-[#8A7968] uppercase tracking-wide cursor-not-allowed opacity-70"
+                                    className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm text-textMuted uppercase tracking-wide cursor-not-allowed opacity-70"
                                 />
                             </div>
                         </div>
                     </div>
 
-                    {/* Submission Node Controls */}
-                    <div className="border-t-2 border-[#FAF6F0] pt-4 flex justify-end">
+                    {/* Form Actions */}
+                    <div className="border-t border-gray-100 pt-4 flex justify-end">
                         <button
                             type="submit"
                             disabled={isPending}
-                            className="bg-[#9A6749] text-white border-2 border-[#9A6749] hover:bg-white hover:text-[#9A6749] text-xs font-bold uppercase tracking-wider px-6 py-3 rounded-xl transition-all disabled:opacity-50 min-w-[180px] text-center shadow-sm"
+                            className="bg-primary text-white border border-primary hover:bg-primary-dark hover:border-primary-dark text-sm font-semibold px-5 py-2.5 rounded-lg transition-all disabled:opacity-50 min-w-[160px] flex items-center justify-center gap-2 shadow-sm cursor-pointer"
                         >
-                            {isPending ? 'Saving changes...' : 'Save Profile Changes'}
+                            {isPending ? (
+                                <>
+                                    <RefreshCw className="w-4 h-4 animate-spin" />
+                                    Saving changes...
+                                </>
+                            ) : (
+                                <>
+                                    <Save className="w-4 h-4" />
+                                    Save Changes
+                                </>
+                            )}
                         </button>
                     </div>
                 </form>
 
-                {/* Password Configuration Section */}
-                <div className="pt-4 border-t border-[#8A7968]/10">
+                {/* Security Configuration Section */}
+                <div className="pt-2">
                     {passwordMessage.text && (
-                        <div className={`mb-6 p-4 rounded-xl border-2 text-xs font-bold uppercase tracking-wider transition-all ${passwordMessage.type === 'success'
-                            ? 'bg-green-50 border-green-500/30 text-green-700'
-                            : 'bg-red-50 border-red-500/30 text-red-700'
+                        <div className={`mb-4 p-4 rounded-xl border text-sm font-medium flex items-center gap-2 transition-all ${passwordMessage.type === 'success'
+                            ? 'bg-accent-light border-accent/30 text-accent'
+                            : 'bg-red-50 border-red-200 text-red-700'
                             }`}>
+                            <div className={`w-1.5 h-1.5 rounded-full ${passwordMessage.type === 'success' ? 'bg-accent' : 'bg-red-600'}`} />
                             {passwordMessage.text}
                         </div>
                     )}
 
-                    <form onSubmit={handlePasswordUpdate} className="bg-white border-2 border-[#8A7968]/20 rounded-xl p-6 shadow-sm space-y-6">
+                    <form onSubmit={handlePasswordUpdate} className="bg-card border border-gray-200 rounded-xl p-6 shadow-sm space-y-6">
                         <div>
-                            <h3 className="text-xs font-bold tracking-widest text-[#8A7968] uppercase mb-1 border-b border-[#8A7968]/10 pb-1">
-                                Change Account Password
+                            <h3 className="text-sm font-semibold text-primary flex items-center gap-2 mb-1 border-b border-gray-100 pb-2">
+                                <Key className="w-4 h-4 text-primary" />
+                                Change Password
                             </h3>
-                            <p className="text-[10px] text-[#8A7968] font-medium mb-4 italic">
-                                Update your password below to maintain secure access to your account.
+                            <p className="text-xs text-textMuted mb-4 italic">
+                                Update your password below to maintain secure access to your supervisor account.
                             </p>
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div className="flex flex-col space-y-2">
-                                <label className="text-[10px] font-bold text-[#291C14] tracking-wider uppercase">New Password</label>
-                                <input
-                                    type="password"
-                                    name="newPassword"
-                                    value={passwordData.newPassword}
-                                    onChange={handlePasswordInputChange}
-                                    placeholder="••••••••"
-                                    required
-                                    className="w-full px-4 py-3 bg-[#FAF6F0] border-2 border-[#8A7968]/10 rounded-xl text-xs font-bold text-[#291C14] focus:border-[#9A6749] focus:outline-none transition-all"
-                                />
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="flex flex-col space-y-1.5">
+                                <label className="text-xs font-semibold text-textMain tracking-wide uppercase">New Password</label>
+                                <div className="relative">
+                                    <Lock className="w-4 h-4 text-textMuted/60 absolute left-3 top-3.5" />
+                                    <input
+                                        type="password"
+                                        name="newPassword"
+                                        value={passwordData.newPassword}
+                                        onChange={handlePasswordInputChange}
+                                        placeholder="••••••••"
+                                        required
+                                        className="w-full pl-9 pr-4 py-2.5 bg-background border border-gray-300 rounded-lg text-sm text-textMain focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-all"
+                                    />
+                                </div>
                             </div>
 
-                            <div className="flex flex-col space-y-2">
-                                <label className="text-[10px] font-bold text-[#291C14] tracking-wider uppercase">Confirm New Password</label>
-                                <input
-                                    type="password"
-                                    name="confirmPassword"
-                                    value={passwordData.confirmPassword}
-                                    onChange={handlePasswordInputChange}
-                                    placeholder="••••••••"
-                                    required
-                                    className="w-full px-4 py-3 bg-[#FAF6F0] border-2 border-[#8A7968]/10 rounded-xl text-xs font-bold text-[#291C14] focus:border-[#9A6749] focus:outline-none transition-all"
-                                />
+                            <div className="flex flex-col space-y-1.5">
+                                <label className="text-xs font-semibold text-textMain tracking-wide uppercase">Confirm New Password</label>
+                                <div className="relative">
+                                    <Lock className="w-4 h-4 text-textMuted/60 absolute left-3 top-3.5" />
+                                    <input
+                                        type="password"
+                                        name="confirmPassword"
+                                        value={passwordData.confirmPassword}
+                                        onChange={handlePasswordInputChange}
+                                        placeholder="••••••••"
+                                        required
+                                        className="w-full pl-9 pr-4 py-2.5 bg-background border border-gray-300 rounded-lg text-sm text-textMain focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-all"
+                                    />
+                                </div>
                             </div>
                         </div>
 
@@ -414,9 +450,19 @@ export default function WardSupervisorProfilePage() {
                             <button
                                 type="submit"
                                 disabled={isPending}
-                                className="bg-[#291C14] text-white border-2 border-[#291C14] hover:bg-white hover:text-[#291C14] text-xs font-bold uppercase tracking-wider px-6 py-3 rounded-xl transition-all disabled:opacity-50 min-w-[180px] text-center shadow-sm"
+                                className="bg-primary text-white border border-primary hover:bg-primary-dark hover:border-primary-dark text-sm font-semibold px-5 py-2.5 rounded-lg transition-all disabled:opacity-50 min-w-[160px] flex items-center justify-center gap-2 shadow-sm cursor-pointer"
                             >
-                                {isPending ? 'Updating password...' : 'Update Password'}
+                                {isPending ? (
+                                    <>
+                                        <RefreshCw className="w-4 h-4 animate-spin" />
+                                        Updating password...
+                                    </>
+                                ) : (
+                                    <>
+                                        <Key className="w-4 h-4" />
+                                        Update Password
+                                    </>
+                                )}
                             </button>
                         </div>
                     </form>
